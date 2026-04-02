@@ -1,0 +1,18 @@
+# --- 74HC165 (Parallel-In Serial-Out) � Button Inputs ------------------------
+PIN_165_LOAD_PL   = 23   # PL  - load parallel inputs (active LOW)
+PIN_165_CLOCK_CP  = 24   # CP  - shift clock
+PIN_165_DATA_QH   = 6    # QH  - serial data output to Pi
+PIN_165_CE        = 5    # CE  - chip enable (active LOW)
+
+# --- 74HC595 (Serial-In Parallel-Out) � LED Outputs --------------------------
+PIN_595_DATA_SER   = 17  # SER   - serial data input from Pi
+PIN_595_SHIFT_SRCLK = 22 # SRCLK - shift clock
+PIN_595_LATCH_RCLK  = 27 # RCLK  - latch output register
+PIN_595_RESET       = 4  # MR    - master reset (active LOW)
+
+# --- MCP2515 CAN Controller ---------------------------------------------------
+MCP2515_INT  = 25        # INT - interrupt (active LOW)
+
+LIN_frame_id = 0x14
+CAN_frame_id = 0x102
+CAN_frame_id_response = 0x202
