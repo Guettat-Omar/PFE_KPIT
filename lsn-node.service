@@ -1,0 +1,23 @@
+[Unit]
+Description=LSN Node (Dual-Bus LIN/CAN) Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# Update these paths to match exactly where your code lives on the Raspberry Pi
+WorkingDirectory=/home/pi/lsn
+ExecStartPre=/bin/bash /home/pi/lsn/can_init.sh
+ExecStart=/usr/bin/python3 /home/pi/lsn/main.py
+
+# Auto-restart if the app crashes
+Restart=always
+RestartSec=5
+
+# Logging (optional, as Python already handles lsn.log, but good for systemd journal)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lsn-node
+
+[Install]
+WantedBy=multi-user.target

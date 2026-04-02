@@ -8,6 +8,8 @@ NODE: LSN Node | Raspberry Pi 4B
 
 import threading
 import logging
+import os
+import signal
 from config import LIN_frame_id
 
 from hal.gpio_hal import init_gpio, cleanup_gpio
@@ -48,6 +50,15 @@ def main():
         # start both threads
         lin_thread.start()
         can_thread.start()
+        
+        def handle_sigterm(signum, frame):
+            logger.warning(f"Received Linux signal {signum}. Shutting down safely...")
+            cleanup_gpio()
+            logger.info("--- LSN Node Shutdown Sequence Complete ---")
+            os._exit(0)
+            
+        # Map the Linux Termination signal from systemd to our clean shutdown function
+        signal.signal(signal.SIGTERM, handle_sigterm)
         
         logger.info("LSN Node is now fully running. Waiting for interrupts...")
         # keep main alive (LIN thread runs process_frames in a loop)
