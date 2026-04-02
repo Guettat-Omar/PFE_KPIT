@@ -68,6 +68,16 @@ def write_all_chips(sended_data):
     Writes a list/tuple of bytes to multiple cascaded 74HC595 shift registers.
     :param sended_data: Iterable of bytes to write.
     """
+    # Phase 3: Input Validation - Prevent Bad Data from corrupting the Hardware
+    if not isinstance(sended_data, (bytes, bytearray, list, tuple)):
+        logger.error(f"Invalid hardware data type: {type(sended_data)}. Expected bytes/list/tuple.")
+        raise TypeError("Data sent to 595 must be an iterable of bytes.")
+        
+    for index, b in enumerate(sended_data):
+        if not isinstance(b, int) or b < 0 or b > 255:
+            logger.error(f"Invalid byte at index {index}: value {b} is out of bounds (0-255).")
+            raise ValueError(f"Byte {b} is out of bounds for 8-bit shift register.")
+
     logger.debug(f"Writing block of {len(sended_data)} bytes to cascaded 595s.")
     try:
         # The last chip in the chain receives the first pushed byte, so we reverse it.
