@@ -9,8 +9,10 @@ NODE: LSN Node | Raspberry Pi 4B
 
 import can 
 import logging
+import subprocess
 from drivers.hc595_driver import *
 from config import CAN_frame_id, CAN_frame_id_response
+import config
 
 logger = logging.getLogger(__name__)
 comm_logger = logging.getLogger("communication")
@@ -34,12 +36,16 @@ def run(bus):
     Updates the 74HC595 cascading LEDs and responds with LIGHT_STATUS.
     """
     logger.info("Output module background monitoring loop started.")
+    can_error = 0
     while True:
         try:
             msg = bus.recv(timeout=1.0)
             list = []
             if msg is not None:
                 # If we catch our target frame ID
+                can_error = 0
+                config.can_bus_is_healthy = True
+                
                 if msg.arbitration_id == CAN_frame_id:
                     logger.debug(f"Intercepted LIGHT_CMD: {msg.data.hex()}")
                     # Extract the payload bytes
@@ -66,8 +72,23 @@ def run(bus):
                     comm_logger.info(f"CAN OUT | Frame: {hex(CAN_frame_id_response)} | Data: {data.hex()}")
             else:
                 # Silence normal timeout warnings unless debugging deeply
-                logger.debug("[CAN] recv timeout - bus is quiet. Waiting.")
+                can_error = can_error + 1
+                logger.debug(f"[CAN] recv timeout - bus is quiet. Waiting. Error count: {can_error}/5")
+            
+            # This is the "Self-Healing" mechanism (Point 2)
+            if can_error >= 5:
+                logger.error("[CAN] Bus timeout limit reached! Hardware down. Attempting self-healing...")
+                config.can_bus_is_healthy = False
                 
+                # Step 1: Tell Linux to run our bash script to bring `can0` back up physically
+                subprocess.run(["/bin/bash", "/home/pi/lsn/can_init.sh"])
+                
+                # Step 2: Re-initialize the Python socket object because the old connection is dead
+                bus = init()
+                
+                # Step 3: Reset the loop counter 
+                can_error = 0
+
         except Exception as e:
             logger.error(f"Critical error in output execution loop: {e}")
             # Do not exit the thread; recover context and loop again

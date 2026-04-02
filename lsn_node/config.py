@@ -17,4 +17,8 @@ LIN_frame_id = 0x14
 CAN_frame_id = 0x102
 CAN_frame_id_response = 0x202
 
+# --- Global System States -----------------------------------------------------
+# Used to share health status between the CAN (Output) and LIN (Input) threads
+can_bus_is_healthy = True
+
 PULSE_US = 0.000001  # 1 microsecond pulse duration for timing GPIO signals

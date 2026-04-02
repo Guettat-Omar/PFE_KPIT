@@ -11,6 +11,7 @@ import logging
 from drivers.hc165_driver import *
 from drivers.lin_slave import *
 from config import LIN_frame_id
+import config
 
 logger = logging.getLogger(__name__)
 comm_logger = logging.getLogger("communication")
@@ -33,6 +34,13 @@ def handle_input_request(data):
     logger.debug(f"Received LIN request for frame {hex(LIN_frame_id)}. Reading hardware state...")
     try:
         chips_data = read_all_chips(5)
+        
+        # Phase 3: Upstream Diagnostics (LIN)
+        # We append a 6th "Diagnostic" byte to our LIN payload. 
+        # 0x00 means CAN is Healthy. 0xFF means CAN has Failed.
+        diag_byte = 0x00 if config.can_bus_is_healthy else 0xFF
+        chips_data.append(diag_byte)
+        
         chips_bytes = bytes(chips_data)
         if chips_bytes != previous_chips_data:
             logger.info(f"Input state changed: {chips_bytes.hex()}")
