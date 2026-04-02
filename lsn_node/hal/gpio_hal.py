@@ -5,6 +5,8 @@ Defines and initializes all GPIO pins used in the project.
 """
 
 import RPi.GPIO as GPIO
+import logging
+logger = logging.getLogger(__name__)
 
 from config import (
     PIN_165_LOAD_PL, PIN_165_CLOCK_CP, PIN_165_DATA_QH, PIN_165_CE,
@@ -29,8 +31,8 @@ def init_gpio():
     GPIO.setup(PIN_595_RESET,GPIO.OUT,initial=GPIO.HIGH)
     #mc2515 pin intialization
     GPIO.setup(MCP2515_INT,GPIO.IN)
-    print("[GPIO HAL] All pins initialized.")
+    logger.info("[GPIO HAL] All pins initialized.")
   
 def cleanup_gpio():
     GPIO.cleanup()
-    print("[GPIO HAL] GPIO cleaned up.")
+    logger.info("[GPIO HAL] GPIO cleaned up.")
