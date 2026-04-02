@@ -10,11 +10,13 @@ import threading
 import logging
 import os
 import signal
-from config import LIN_frame_id
-
+import time
+from config import LIN_frame_id, NodeState
+import config
 from hal.gpio_hal import init_gpio, cleanup_gpio
+from drivers.hc595_driver import write_all_chips
 from drivers.lin_slave import register_handler, start
-from app.input_module import handle_input_request
+from app.input_module import handle_input_request , check_lin_watchdog
 from app.output_module import init as can_init, run
 
 logger = logging.getLogger(__name__)
@@ -61,9 +63,38 @@ def main():
         signal.signal(signal.SIGTERM, handle_sigterm)
         
         logger.info("LSN Node is now fully running. Waiting for interrupts...")
-        # keep main alive (LIN thread runs process_frames in a loop)
+        config.current_node_state = NodeState.RUNNING
+        
+        # keep main alive and act as the global state supervisor
+        fault_toggle = False
+        was_in_fault_state = False
+        
         while True:
-            lin_thread.join(1)
+            # Continuously check if the LIN master died
+            check_lin_watchdog()
+            
+            # Check the global state machine 
+            if config.current_node_state == NodeState.FAULT:
+                # Log the transition only once when we enter the FAULT state
+                if not was_in_fault_state:
+                    logger.critical("SYSTEM STATE CHANGED TO: FAULT. Initiating SOS flashing sequence.")
+                    was_in_fault_state = True
+                    
+                # Option 3: Flash LEDs synchronously at 1Hz as a visual SOS
+                if fault_toggle:
+                    write_all_chips([0xFF] * 5) # All ON
+                else:
+                    write_all_chips([0x00] * 5) # All OFF
+                
+                fault_toggle = not fault_toggle
+                time.sleep(1) # Flash explicitly at 1Hz
+            else:
+                # If we recover, reset the fault state tracker
+                if was_in_fault_state:
+                    logger.info("SYSTEM STATE CHANGED TO: RUNNING. Hardware recovered.")
+                    was_in_fault_state = False
+                    
+                lin_thread.join(1)
     except KeyboardInterrupt:
         logger.warning("KeyboardInterrupt detected. Shutting down system safely...")
         cleanup_gpio()

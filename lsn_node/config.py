@@ -1,3 +1,6 @@
+
+import enum
+
 # --- 74HC165 (Parallel-In Serial-Out) � Button Inputs ------------------------
 PIN_165_LOAD_PL   = 23   # PL  - load parallel inputs (active LOW)
 PIN_165_CLOCK_CP  = 24   # CP  - shift clock
@@ -17,8 +20,16 @@ LIN_frame_id = 0x14
 CAN_frame_id = 0x102
 CAN_frame_id_response = 0x202
 
+# --- State Machine Enum -------------------------------------------------------
+class NodeState(enum.Enum):
+    INIT = 1
+    RUNNING = 2
+    FAULT = 3
+    RECOVERY = 4
+
 # --- Global System States -----------------------------------------------------
 # Used to share health status between the CAN (Output) and LIN (Input) threads
 can_bus_is_healthy = True
+current_node_state = NodeState.INIT
 
 PULSE_US = 0.000001  # 1 microsecond pulse duration for timing GPIO signals
