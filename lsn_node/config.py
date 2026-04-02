@@ -16,3 +16,5 @@ MCP2515_INT  = 25        # INT - interrupt (active LOW)
 LIN_frame_id = 0x14
 CAN_frame_id = 0x102
 CAN_frame_id_response = 0x202
+
+PULSE_US = 0.000001  # 1 microsecond pulse duration for timing GPIO signals
