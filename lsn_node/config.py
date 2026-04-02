@@ -31,5 +31,6 @@ class NodeState(enum.Enum):
 # Used to share health status between the CAN (Output) and LIN (Input) threads
 can_bus_is_healthy = True
 current_node_state = NodeState.INIT
+last_fault_reason = "NONE"
 
 PULSE_US = 0.000001  # 1 microsecond pulse duration for timing GPIO signals

@@ -77,7 +77,7 @@ def main():
             if config.current_node_state == NodeState.FAULT:
                 # Log the transition only once when we enter the FAULT state
                 if not was_in_fault_state:
-                    logger.critical("SYSTEM STATE CHANGED TO: FAULT. Initiating SOS flashing sequence.")
+                    logger.critical(f"SYSTEM STATE CHANGED TO: FAULT. Reason: {config.last_fault_reason}. Initiating SOS flashing sequence.")
                     was_in_fault_state = True
                     
                 # Option 3: Flash LEDs synchronously at 1Hz as a visual SOS
@@ -88,6 +88,10 @@ def main():
                 
                 fault_toggle = not fault_toggle
                 time.sleep(1) # Flash explicitly at 1Hz
+            elif config.current_node_state == NodeState.RECOVERY:
+                logger.warning(f"SYSTEM STATE RECOVERY: Attempting to heal hardware... Reason: {config.last_fault_reason}")
+                time.sleep(2)  # Give the system time to bounce before checking again
+                
             else:
                 # If we recover, reset the fault state tracker
                 if was_in_fault_state:

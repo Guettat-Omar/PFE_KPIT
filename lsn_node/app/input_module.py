@@ -43,6 +43,7 @@ def check_lin_watchdog():
     time_since_last_poll = time.time() - last_lin_rx_time
     if time_since_last_poll > 5.0:
         logger.error(f"[LIN WATCHDOG] LIN Master lost! No polls received in {time_since_last_poll:.1f} seconds.")
+        config.last_fault_reason = f"LIN_MASTER_TIMEOUT (> 5s)"
         config.current_node_state = NodeState.FAULT
 
 

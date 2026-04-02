@@ -11,7 +11,7 @@ import can
 import logging
 import subprocess
 from drivers.hc595_driver import *
-from config import CAN_frame_id, CAN_frame_id_response
+from config import CAN_frame_id, CAN_frame_id_response,NodeState
 import config
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,8 @@ def run(bus):
             if can_error >= 5:
                 logger.error("[CAN] Bus timeout limit reached! Hardware down. Attempting self-healing...")
                 config.can_bus_is_healthy = False
+                config.last_fault_reason = "CAN_BUS_HARDWARE_FAILURE"
+                config.current_node_state = NodeState.RECOVERY
                 
                 # Step 1: Tell Linux to run our bash script to bring `can0` back up physically
                 subprocess.run(["/bin/bash", "/home/pi/lsn/can_init.sh"])
@@ -88,6 +90,7 @@ def run(bus):
                 
                 # Step 3: Reset the loop counter 
                 can_error = 0
+                config.current_node_state = NodeState.RUNNING
 
         except Exception as e:
             logger.error(f"Critical error in output execution loop: {e}")
