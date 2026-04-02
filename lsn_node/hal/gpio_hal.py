@@ -1,25 +1,15 @@
 """
-GPIO HAL — Hardware Abstraction Layer
+GPIO HAL ï¿½ Hardware Abstraction Layer
 LSN Node | Raspberry Pi 4B
 Defines and initializes all GPIO pins used in the project.
 """
 
 import RPi.GPIO as GPIO
 
-# --- 74HC165 (Parallel-In Serial-Out) — Button Inputs ------------------------
-PIN_165_LOAD_PL   = 23   # PL  - load parallel inputs (active LOW)
-PIN_165_CLOCK_CP  = 24   # CP  - shift clock
-PIN_165_DATA_QH   = 6    # QH  - serial data output to Pi
-PIN_165_CE        = 5    # CE  - chip enable (active LOW)
-
-# --- 74HC595 (Serial-In Parallel-Out) — LED Outputs --------------------------
-PIN_595_DATA_SER   = 17  # SER   - serial data input from Pi
-PIN_595_SHIFT_SRCLK = 22 # SRCLK - shift clock
-PIN_595_LATCH_RCLK  = 27 # RCLK  - latch output register
-PIN_595_RESET       = 4  # MR    - master reset (active LOW)
-
-# --- MCP2515 CAN Controller ---------------------------------------------------
-MCP2515_INT  = 25        # INT - interrupt (active LOW)
+from config import (
+    PIN_165_LOAD_PL, PIN_165_CLOCK_CP, PIN_165_DATA_QH, PIN_165_CE,
+    PIN_595_DATA_SER, PIN_595_SHIFT_SRCLK, PIN_595_LATCH_RCLK, PIN_595_RESET,
+    MCP2515_INT)
 # SPI0: SCLK=GPIO11, MISO=GPIO9, MOSI=GPIO10, CS=GPIO8 (handled by kernel)
 
 # --- LIN Bus (UART0) ----------------------------------------------------------
