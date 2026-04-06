@@ -1,4 +1,63 @@
-LIN_description_file;
+﻿LIN_description_file;
 LIN_protocol_version = "2.0";
 LIN_language_version = "2.0";
 LIN_speed = 19.2 kbps;
+
+Nodes {
+  Master: bcm, 5.0 ms, 0.1 ms ;
+  Slaves: scs, wbp, wpa, lsn ;
+}
+
+Signals {
+    Left_Turn_Btn: 1, 0, lsn, bcm ;
+    Right_Turn_Btn: 1, 0, lsn, bcm ;
+    Hazard_Btn: 1, 0, lsn, bcm ;
+    Low_Beam_Btn: 1, 0, lsn, bcm ;
+    High_Beam_Btn: 1, 0, lsn, bcm ;
+    Brake_Btn: 1, 0, lsn, bcm ;
+    Reverse_Btn: 1, 0, lsn, bcm ;
+    Fog_Btn: 1, 0, lsn, bcm ;
+    Flash_Btn: 1, 0, lsn, bcm ;
+}
+
+Frames {
+    LSN_Input_Frame : 0x14, lsn, 5 {
+        Left_Turn_Btn, 37 ;
+        Right_Turn_Btn, 36 ;
+        Fog_Btn, 35 ;
+        Flash_Btn, 34 ;
+        Brake_Btn, 29 ;
+        Reverse_Btn, 28 ;
+        Low_Beam_Btn, 26 ;
+        High_Beam_Btn, 25 ;
+        Hazard_Btn, 24 ;
+    }
+}
+
+Diagnostic_signals {
+    MasterReqB0: 8, 0 ; MasterReqB1: 8, 0 ; MasterReqB2: 8, 0 ; MasterReqB3: 8, 0 ;
+    MasterReqB4: 8, 0 ; MasterReqB5: 8, 0 ; MasterReqB6: 8, 0 ; MasterReqB7: 8, 0 ;
+    SlaveRespB0: 8, 0 ; SlaveRespB1: 8, 0 ; SlaveRespB2: 8, 0 ; SlaveRespB3: 8, 0 ;
+    SlaveRespB4: 8, 0 ; SlaveRespB5: 8, 0 ; SlaveRespB6: 8, 0 ; SlaveRespB7: 8, 0 ;
+}
+
+Diagnostic_frames {
+    MasterReq: 0x3C {
+        MasterReqB0, 0 ; MasterReqB1, 8 ; MasterReqB2, 16 ; MasterReqB3, 24 ;
+        MasterReqB4, 32 ; MasterReqB5, 40 ; MasterReqB6, 48 ; MasterReqB7, 56 ;
+    }
+    SlaveResp: 0x3D {
+        SlaveRespB0, 0 ; SlaveRespB1, 8 ; SlaveRespB2, 16 ; SlaveRespB3, 24 ;
+        SlaveRespB4, 32 ; SlaveRespB5, 40 ; SlaveRespB6, 48 ; SlaveRespB7, 56 ;
+    }
+}
+
+Schedule_tables {
+    Normal_Table {
+        LSN_Input_Frame delay 5.0 ms ;
+    }
+    Diagnostic_Table {
+        MasterReq delay 10.0 ms ;
+        SlaveResp delay 10.0 ms ;
+    }
+}

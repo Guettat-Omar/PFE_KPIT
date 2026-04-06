@@ -1,0 +1,57 @@
+VERSION ""
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: BCM LSN
+
+BO_ 258 LIGHT_CMD: 5 BCM
+ SG_ Led_B0_0 : 0|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B0_5 : 5|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B0_6 : 6|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B0_7 : 7|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B1_0 : 8|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B1_1 : 9|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B1_2 : 10|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B1_3 : 11|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B1_4 : 12|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B2_0 : 16|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B2_7 : 23|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B3_4 : 28|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B3_5 : 29|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B3_6 : 30|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B3_7 : 31|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B4_0 : 32|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B4_4 : 36|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B4_5 : 37|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B4_6 : 38|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B4_7 : 39|1@1+ (1,0) [0|1] "" LSN
