@@ -11,7 +11,7 @@ import logging
 import time
 from drivers.hc165_driver import *
 from drivers.lin_slave import *
-from config import LIN_frame_id, NodeState
+from config import LIN_frame_id, LIN_diag_frame_id, NodeState
 import config
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ def init():
     """
     logger.info("Initializing input module.")
     register_handler(LIN_frame_id, handle_input_request)
+    register_handler(LIN_diag_frame_id, handle_diagnostic_request)
 
 
 def check_lin_watchdog():
@@ -81,5 +82,30 @@ def handle_input_request(data):
     except Exception as e:
         logger.error(f"Failed to handle LIN input request: {e}")
         # Safe fallback upon crash (all zeros, indicating failure to read)
-        return bytes([0x00] * 6)  
+        return bytes([0x00] * 6)
+
+
+def handle_diagnostic_request(data):
+    """
+    Callback triggered when the LIN master asks for 0x3D (Diagnostic Slave Response).
+    We must return exactly 8 bytes of diagnostic information.
+    """
+    global last_lin_rx_time
+    # Reset watchdog timer
+    last_lin_rx_time = time.time()
+    
+    logger.debug(f"Received Diagnostic Request! Sending Node Health...")
+    
+    # Byte 0: Node State (1=INIT, 2=RUNNING, 3=FAULT, 4=RECOVERY)
+    byte_0 = config.current_node_state.value
+    
+    # Byte 1: CAN Bus Health (0x00 if healthy, 0xFF if bad)
+    byte_1 = 0x00 if config.can_bus_is_healthy else 0xFF
+    
+    # Byte 2-7: Reserved / Pad with zeros
+    diag_response = [byte_0, byte_1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    
+    diag_bytes = bytes(diag_response)
+    comm_logger.info(f"LIN OUT | Frame: {hex(LIN_diag_frame_id)} (DIAG) | Data: {diag_bytes.hex()}")
+    return diag_bytes  
 

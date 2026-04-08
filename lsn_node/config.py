@@ -17,6 +17,7 @@ PIN_595_RESET       = 4  # MR    - master reset (active LOW)
 MCP2515_INT  = 25        # INT - interrupt (active LOW)
 
 LIN_frame_id = 0x14
+LIN_diag_frame_id = 0x3D  # 61 in decimal
 CAN_frame_id = 0x102
 CAN_frame_id_response = 0x202
 
