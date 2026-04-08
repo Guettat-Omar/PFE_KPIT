@@ -59,7 +59,6 @@ def run(bus):
     while True:
         try:
             msg = bus.recv(timeout=1.0)
-            list = []
             if msg is not None:
                 # If we catch our target frame ID
                 can_error = 0
@@ -70,7 +69,7 @@ def run(bus):
                     
                     # E2E Protection Validation (Extract 7 bytes)
                     # We expect 7 bytes (5 bytes of LEDs, 1 byte of Counter, 1 byte of CRC)
-                    received_bytes = list(msg.data[:7])
+                    received_bytes = msg.data[:7]
                     
                     if len(received_bytes) == 7:
                         # 1. Reverse the whole array back to big-endian (since BCM reversed it)
