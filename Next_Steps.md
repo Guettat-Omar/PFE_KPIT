@@ -36,19 +36,19 @@ Our architecture is solid, but since it runs Python on a generic Linux OS, we ne
 - **The Problem:** A random noise spike on the CAN bus could flip a bit, turning on the high beams inadvertently.
 - **The Fix:** Added a Rolling Counter (4-bit) and a CRC-8 Checksum to the `LIGHT_CMD` in `BCM_CAN.dbc`. Updated the BCM to increment the counter and calculate the CRC on send, and updated the LSN to validate the CRC and Sequence on receive. This completely mitigates data corruption and replay attacks.
 
-### Step 3: Implement Diagnostic Routines (Medium Priority)
+### Step 3: Implement Diagnostic Routines [DONE]
 
 - **Current State:** We laid the groundwork for `0x3C / 0x3D` Master/Slave requests in the LDF.
-- **The Fix:** Add code to poll the LSN for its health status (e.g., CAN connectivity dropouts recorded via `NodeState.FAULT`) over LIN Diagnostics.
+- **The Fix:** Added code to poll the LSN for its health status (e.g., CAN connectivity dropouts recorded via `NodeState.FAULT`) over LIN Diagnostics. The BCM now requests `0x3D` at 1Hz.
 
-### Step 4: Automated HIL Testing & Fault Injection (Validation Phase)
+### Step 4: Automated HIL Testing & Fault Injection [DONE]
 
-- **Current State:** Baseline physical testing is complete, but automated fault handling requires manual intervention.
+- **Current State:** Standalone fault injection scripts have been developed to bypass physical components and securely execute real-time attack vectors.
 - **The Goal:** Build an automated test scripts running on the LSN Raspberry Pi that actively abuses the BCM to ensure it fails safely.
-- **The Tests:**
-  - **E2E Attack:** Inject CAN frames with bad CRC-8 checksums.
-  - **Counter Attack:** Send sequence numbers out of order (e.g., 1, 2, 5).
-  - **Hardware Fault:** Simulate a disconnected LIN bus or a stuck-high button.
+- **The Tests Built & Verified:**
+  - **E2E Attack:** Inject CAN frames with bad CRC-8 checksums. (LSN Successfully detects and drops modified packets).
+  - **Counter Attack:** Send sequence numbers out of order (e.g., 1, 2, 5). (LSN successfully rejects replay sequences).
+  - **Hardware Fault:** Simulate a disconnected LIN bus or a stuck-high button. (BCM detects slave node heartbeat timeouts safely).
 - **Why this happens after Step 2 & 3:** We cannot simulate bypassing the checksum protection until we have actually built the checksum protection.
 
 ### Step 5: Heterogeneous Architecture - Python BCM + C/RTOS Nodes
