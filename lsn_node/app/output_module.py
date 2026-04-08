@@ -108,11 +108,9 @@ def run(bus):
                         # Log the received CAN data to the dedicated communications log
                         comm_logger.info(f"CAN IN  | Frame: {hex(CAN_frame_id)} | E2E Valid | LED Data: {led_data.hex()}")
                         
-                        # Update hardware LEDs (Feed the shift registers the 5 bytes, BUT remember 
-                        # the driver expects them in the Slave's reversed order, so we pass it the originally
-                        # received first 5 bytes from the wire).
-                        # Let's pass the first 5 bytes exactly as they arrived on the wire.
-                        raw_shift_data = bytes(received_bytes[0:5])
+                        # Update hardware LEDs. The driver expects them in the Slave's reversed order 
+                        # (Led4 down to Led0). We can just reverse our clean led_data.
+                        raw_shift_data = led_data[::-1]
                         
                         logger.debug("Writing validated data to LED shift registers...")
                         write_all_chips(raw_shift_data)
