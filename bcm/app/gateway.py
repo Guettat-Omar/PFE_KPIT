@@ -16,6 +16,9 @@ class BcmGateway:
         self.brake_sm = BrakeSignalSM()
         self.reverse_sm = ReverseSignalSM()
         
+        # Initialize E2E sequence counter
+        self.seq_counter = 0
+
         # 2. Load the DBC Database
         try:
             self.db = cantools.database.load_file(DBC_path)
@@ -25,6 +28,23 @@ class BcmGateway:
         except Exception as e:
             logger.critical(f"Failed to load DBC file: {e}")
             self.db = None
+
+    def _calculate_crc8(self, data: bytes) -> int:
+        """
+        SAE J1850 CRC-8 calculation.
+        Polynomial: 0x1D
+        Initial value: 0xFF
+        """
+        crc = 0xFF
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                if crc & 0x80:
+                    crc = (crc << 1) ^ 0x1D
+                else:
+                    crc <<= 1
+                crc &= 0xFF
+        return crc ^ 0xFF
 
     def process_and_send(self, lsn_lin_data: bytes, flash_state: bool) -> bytes | None:
         """
@@ -79,7 +99,12 @@ class BcmGateway:
             "Led_B2_0": 0, "Led_B2_7": 0,
             "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
             "Led_B4_0": 0, "Led_B4_4": 0, "Led_B4_5": 0, "Led_B4_6": 0, "Led_B4_7": 0,
+            "Seq_Counter": self.seq_counter,  # Add the Seq_Counter to the dictionary
+            "CRC_Checksum": 0  # Placeholder, we will calculate this next!
         }
+
+        # Increment sequence counter for next time (0 to 15)
+        self.seq_counter = (self.seq_counter + 1) % 16
 
         # --- Turn & Hazard Logic ---
         if turn_signals.get("LeftTurnLed") == 1:
@@ -133,17 +158,25 @@ class BcmGateway:
             combined_signals["Led_B2_0"] = 1
             combined_signals["Led_B4_7"] = 1
 
-        # Step 5: The Magic. Ask Cantools to encode the dictionary into raw CAN bytes!
+        # Step 5: Ask Cantools to encode the dictionary into raw CAN bytes
         try:
-            can_payload = self.light_cmd_msg.encode(combined_signals)
+            # First encode with CRC = 0
+            can_payload = bytearray(self.light_cmd_msg.encode(combined_signals))
+            
+            # Step 6: Calculate E2E CRC on the first 6 bytes (0 through 5)
+            # The CRC byte itself is at index 6, which is currently 0
+            crc_val = self._calculate_crc8(bytes(can_payload[0:6]))
+            
+            # Re-encode or simply inject the CRC into the bytearray
+            # Since DBC CRC is exactly byte 6:
+            can_payload[6] = crc_val
             
             # COMPENSATION FOR SLAVE NODE:
-            # If the LSN script has `reversed()` in its driver, we simply reverse 
-            # the CAN bytes here on the Master before sending!
+            # If the LSN script has `reversed()` in its driver, we reverse it here
             can_payload = can_payload[::-1]
             
-            logger.debug(f"Encoded CAN Payload: {can_payload.hex()}")
-            return can_payload
+            logger.debug(f"Encoded CAN Payload with CRC: {can_payload.hex()}")
+            return bytes(can_payload)
         except Exception as e:
             logger.error(f"Failed to encode CAN message: {e}")
             return None

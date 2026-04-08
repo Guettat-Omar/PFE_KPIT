@@ -34,7 +34,7 @@ BS_:
 
 BU_: BCM LSN
 
-BO_ 258 LIGHT_CMD: 5 BCM
+BO_ 258 LIGHT_CMD: 7 BCM
  SG_ Led_B0_0 : 0|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B0_5 : 5|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B0_6 : 6|1@1+ (1,0) [0|1] "" LSN
@@ -55,3 +55,5 @@ BO_ 258 LIGHT_CMD: 5 BCM
  SG_ Led_B4_5 : 37|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B4_6 : 38|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B4_7 : 39|1@1+ (1,0) [0|1] "" LSN
+ SG_ Seq_Counter : 40|4@1+ (1,0) [0|15] "" LSN
+ SG_ CRC_Checksum : 48|8@1+ (1,0) [0|255] "" LSN
