@@ -1,0 +1,16 @@
+[Unit]
+Description=BCM Master Node Service
+After=network.target
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/pi/didactic_code
+ExecStartPre=/bin/bash /home/pi/didactic_code/lsn/can_init.sh
+ExecStart=/usr/bin/python3 /home/pi/didactic_code/bcm/main.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bcm-node
+[Install]
+WantedBy=multi-user.target
