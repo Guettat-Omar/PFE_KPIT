@@ -5,8 +5,7 @@ LIN_speed = 19.2 kbps;
 
 Nodes {
   Master: bcm, 5.0 ms, 0.1 ms ;
-  Slaves: scs, wbp, wpa, lsn ;
-}
+  Slaves: scs, wbp, wpa, 
 
 Signals {
     Left_Turn_Btn: 1, 0, lsn, bcm ;
@@ -58,6 +57,10 @@ Schedule_tables {
     }
     Diagnostic_Table {
         MasterReq delay 10.0 ms ;
+        SlaveResp delay 10.0 ms ;
+    }
+}
+y 10.0 ms ;
         SlaveResp delay 10.0 ms ;
     }
 }

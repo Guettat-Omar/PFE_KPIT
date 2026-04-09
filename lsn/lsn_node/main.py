@@ -16,7 +16,7 @@ import config
 from hal.gpio_hal import init_gpio, cleanup_gpio
 from drivers.hc595_driver import write_all_chips
 from drivers.lin_slave import register_handler, start
-from app.input_module import handle_input_request , check_lin_watchdog
+from app.input_module import handle_input_request, handle_diagnostic_request, check_lin_watchdog
 from app.output_module import init as can_init, run
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,9 @@ def main():
     
     logger.info(f"Registering LIN handler for frame ID {hex(LIN_frame_id)}...")
     register_handler(LIN_frame_id, handle_input_request)
+    
+    logger.info(f"Registering Diagnostic LIN handler for frame ID 0x3D...")
+    register_handler(0x3D, handle_diagnostic_request)
     
     logger.info("Initializing CAN bus...")
     bus = can_init()

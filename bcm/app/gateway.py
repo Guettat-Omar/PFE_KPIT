@@ -71,6 +71,7 @@ class BcmGateway:
         hazard_btn   = bool((lsn_lin_data[3] >> 0) & 1)
         low_beam_sw  = bool((lsn_lin_data[3] >> 2) & 1)
         high_beam_sw = bool((lsn_lin_data[3] >> 1) & 1)
+        ftp_btn = bool((lsn_lin_data[4] >> 2) & 1)
         
         brake_sw     = bool((lsn_lin_data[3] >> 5) & 1)
         reverse_sw   = bool((lsn_lin_data[3] >> 4) & 1)
@@ -81,13 +82,13 @@ class BcmGateway:
         
         # Step 2: Feed the State Machines
         self.turn_sm.update(left_btn, right_btn, hazard_btn)
-        self.headlight_sm.update(low_beam_sw, high_beam_sw, parking_sw, front_fog_sw, rear_fog_sw)
+        self.headlight_sm.update(low_beam_sw, high_beam_sw, parking_sw, front_fog_sw, rear_fog_sw, ftp_btn)
         self.brake_sm.update(brake_sw)
         self.reverse_sm.update(reverse_sw)
 
         # Step 3: Get their output dictionaries
         turn_signals = self.turn_sm.get_light_cmd_bits(flash_state)
-        headlight_signals = self.headlight_sm.get_light_cmd_bits()
+        headlight_signals = self.headlight_sm.get_light_cmd_bits(ftp_btn)
         brake_signals = self.brake_sm.get_brake_cmd_bits()
         reverse_signals = self.reverse_sm.get_reverse_cmd_bits()
 
