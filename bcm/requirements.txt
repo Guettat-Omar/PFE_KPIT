@@ -1,0 +1,4 @@
+cantools==39.4.4
+python-can==4.3.1
+pyserial==3.5.0
+RPi.GPIO==0.7.1

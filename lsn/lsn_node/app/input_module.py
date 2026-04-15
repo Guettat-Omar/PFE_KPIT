@@ -58,6 +58,11 @@ def handle_input_request(data):
     # Reset the watchdog timer because the Master just knocked on our door!
     last_lin_rx_time = time.time()
     
+    # Clear the fault state if communication is re-established!
+    if config.current_node_state == NodeState.FAULT and getattr(config, "last_fault_reason", "").startswith("LIN_MASTER_TIMEOUT"):
+        config.current_node_state = NodeState.RUNNING
+        logger.info("[LIN WATCHDOG] LIN Master reconnected! Returning to RUNNING state.")
+    
     logger.debug(f"Received LIN request for frame {hex(LIN_frame_id)}. Reading hardware state...")
     try:
         chips_data = read_all_chips(5)
@@ -93,6 +98,11 @@ def handle_diagnostic_request(data):
     global last_lin_rx_time
     # Reset watchdog timer
     last_lin_rx_time = time.time()
+    
+    # Clear the fault state if communication is re-established!
+    if config.current_node_state == NodeState.FAULT and getattr(config, "last_fault_reason", "").startswith("LIN_MASTER_TIMEOUT"):
+        config.current_node_state = NodeState.RUNNING
+        logger.info("[LIN DIAGNOSTICS] LIN Master reconnected! Returning to RUNNING state.")
     
     logger.debug(f"Received Diagnostic Request! Sending Node Health...")
     

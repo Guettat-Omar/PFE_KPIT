@@ -9,6 +9,7 @@ import logging
 from bcm.config import DBC_path, CAN_CHANNEL
 from bcm.app.gateway import BcmGateway
 from bcm.app.flash_timer import FlashTimer
+import logging.handlers
 
 # Mock imports for hardware drivers. 
 # We use try/except so we can run this on Windows for testing without Raspberry Pi errors.
@@ -19,10 +20,25 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
     print("WARNING: Hardware drivers not found. Running in simulation mode.")
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    
 logger = logging.getLogger("BCM_MAIN")
+logger.setLevel(logging.INFO)
 
+# Define the format of the logs (e.g., "2026-04-09 14:00:00 - INFO: Starting...")
+log_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+
+# 1. Create the Rotating File Handler (Max 5MB, keep 3 backup files)
+log_path = os.path.join(os.path.dirname(__file__), 'bcm_node.log')
+file_handler = logging.handlers.RotatingFileHandler(
+    log_path, maxBytes=5*1024*1024, backupCount=3
+)
+file_handler.setFormatter(log_formatter)
+logger.addHandler(file_handler)
+
+# 2. Keep the Console Handler (so you still see logs if you perfectly run it manually)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(log_formatter)
+logger.addHandler(console_handler)
 def main():
     logger.info("Starting Body Control Module (BCM)...")
 
