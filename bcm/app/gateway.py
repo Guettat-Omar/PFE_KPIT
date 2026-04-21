@@ -65,21 +65,38 @@ class BcmGateway:
         # BUTTON_FLASH = (4, 2) -> byte 4, bit 2
         # Note in Python, we shift the bit right and check if it's 1
         
-        left_btn     = bool((lsn_lin_data[4] >> 5) & 1)
-        right_btn    = bool((lsn_lin_data[4] >> 4) & 1)
+        # Left Turn = Byte 3, Bit 6 (0x40)
+        left_btn     = bool((lsn_lin_data[3] >> 6) & 1)
+        # Right Turn = Byte 3, Bit 5 (0x20)
+        right_btn    = bool((lsn_lin_data[3] >> 5) & 1)
         
-        hazard_btn   = bool((lsn_lin_data[3] >> 0) & 1)
-        low_beam_sw  = bool((lsn_lin_data[3] >> 2) & 1)
-        high_beam_sw = bool((lsn_lin_data[3] >> 1) & 1)
-        ftp_btn = bool((lsn_lin_data[4] >> 2) & 1)
+        hazard_btn   = bool((lsn_lin_data[4] >> 3) & 1) # Double check this is correct on your board
+        # Verified by frame capture:
+        #   Idle baseline:          00 00 40 00 00 00 -> byte 2 = 0x40 (bit 6 always on)
+        #   High beam pressed:      00 00 04 00 00 00 -> byte 2 = 0x04 -> bit 2
+        #   Low beam (stalk pos 2): 00 00 58 00 00 00 -> byte 2 = 0x58 = 0x40(idle)+0x10(park)+0x08(low) -> bit 3
+        low_beam_sw  = bool((lsn_lin_data[2] >> 3) & 1) # byte 2, bit 3
+        ftp_not_pressed = bool((lsn_lin_data[2] >> 6) & 1)  # normally closed = 1 when not pressed
+        ftp_btn = not ftp_not_pressed                          # inverted: True when pressed
+        high_beam_sw = bool((lsn_lin_data[2] >> 2) & 1) and ftp_not_pressed   # byte 4, bit 2 (momentary, raw)
         
-        brake_sw     = bool((lsn_lin_data[3] >> 5) & 1)
-        reverse_sw   = bool((lsn_lin_data[3] >> 4) & 1)
+        brake_sw     = bool((lsn_lin_data[1] >> 6) & 1) # Used to be byte 3 bit 5, moved it away to let rear fog use it
+        reverse_sw   = bool((lsn_lin_data[1] >> 1) & 1)
         
-        front_fog_sw = bool((lsn_lin_data[4] >> 3) & 1)
-        rear_fog_sw  = front_fog_sw # Binding both to the single fog button for now
-        parking_sw   = False        # No parking button in the script
+        front_fog_sw = bool((lsn_lin_data[3] >> 7) & 1)   # fog ring engaged
+        rear_fog_sw  = bool((lsn_lin_data[2] >> 0) & 1)
         
+        # Position light is 000050000000 -> Byte 2 is 0x50 (Idle 0x40 + Switch 0x10) -> 0x10 is Bit 4
+        parking_sw   = bool((lsn_lin_data[2] >> 4) & 1)
+        
+        # Step 1b: Debug — log raw parsed inputs so bit-mapping bugs are visible
+        logger.debug(
+            f"[GW] LIN raw: {lsn_lin_data.hex()} | "
+            f"low={low_beam_sw} high={high_beam_sw} park={parking_sw} "
+            f"ftp={ftp_btn} fog_f={front_fog_sw} fog_r={rear_fog_sw} "
+            f"brake={brake_sw} rev={reverse_sw}"
+        )
+
         # Step 2: Feed the State Machines
         self.turn_sm.update(left_btn, right_btn, hazard_btn)
         self.headlight_sm.update(low_beam_sw, high_beam_sw, parking_sw, front_fog_sw, rear_fog_sw, ftp_btn)
@@ -95,10 +112,10 @@ class BcmGateway:
 
         # Step 4: Combine into the exact DBC mappings based on the new LED hardware table!
         combined_signals = {
-            "Led_B0_0": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
-            "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0, "Led_B1_4": 0,
-            "Led_B2_0": 0, "Led_B2_7": 0,
-            "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
+            "Led_B0_0": 0, "Led_B0_3": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
+            "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0, "Led_B1_4": 0, "Led_B1_7": 0,
+            "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_7": 0,
+            "Led_B3_1": 0, "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
             "Led_B4_0": 0, "Led_B4_4": 0, "Led_B4_5": 0, "Led_B4_6": 0, "Led_B4_7": 0,
             "Seq_Counter": self.seq_counter,  # Add the Seq_Counter to the dictionary
             "CRC_Checksum": 0  # Placeholder, we will calculate this next!
@@ -132,17 +149,18 @@ class BcmGateway:
             combined_signals["Led_B4_6"] = 1
 
         # Front/Rear Fog Lights overlap in the physical scheme provided
-        if headlight_signals.get("FrontFogLed") == 1 or headlight_signals.get("RearFogLed") == 1:
-            combined_signals["Led_B1_1"] = 1
-            combined_signals["Led_B2_0"] = 1
-            combined_signals["Led_B3_7"] = 1
-            combined_signals["Led_B4_7"] = 1
+        if headlight_signals.get("FrontFogLed") == 1:
+            combined_signals["Led_B0_3"] = 1
+            combined_signals["Led_B2_1"] = 1
+        
+        if headlight_signals.get("RearFogLed") == 1:
+            combined_signals["Led_B4_4"] = 1
+            combined_signals["Led_B2_7"] = 1
             
         if headlight_signals.get("ParkingLed") == 1:
-            combined_signals["Led_B1_3"] = 1
-            combined_signals["Led_B2_7"] = 1
-            combined_signals["Led_B3_6"] = 1
-            combined_signals["Led_B4_4"] = 1
+            combined_signals["Led_B0_5"] = 1
+            combined_signals["Led_B1_0"] = 1
+            combined_signals["Led_B2_0"] = 1
 
         # --- Brake & Reverse Logic ---
         if brake_signals.get("BrakeLed") == 1:
@@ -151,9 +169,8 @@ class BcmGateway:
             combined_signals["Led_B4_5"] = 1
             
         if reverse_signals.get("ReverseLed") == 1:
-            combined_signals["Led_B0_5"] = 1
-            combined_signals["Led_B1_0"] = 1
-
+            combined_signals["Led_B3_1"] = 1
+            combined_signals["Led_B1_7"] = 1
         # DRL fallback mapping
         if turn_signals.get("DrlLed", 0) == 1:
             combined_signals["Led_B2_0"] = 1

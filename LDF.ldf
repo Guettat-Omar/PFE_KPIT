@@ -5,31 +5,35 @@ LIN_speed = 19.2 kbps;
 
 Nodes {
   Master: bcm, 5.0 ms, 0.1 ms ;
-  Slaves: scs, wbp, wpa, 
+  Slaves: scs, wbp, wpa,
 
 Signals {
-    Left_Turn_Btn: 1, 0, lsn, bcm ;
-    Right_Turn_Btn: 1, 0, lsn, bcm ;
-    Hazard_Btn: 1, 0, lsn, bcm ;
-    Low_Beam_Btn: 1, 0, lsn, bcm ;
-    High_Beam_Btn: 1, 0, lsn, bcm ;
-    Brake_Btn: 1, 0, lsn, bcm ;
-    Reverse_Btn: 1, 0, lsn, bcm ;
-    Fog_Btn: 1, 0, lsn, bcm ;
-    Flash_Btn: 1, 0, lsn, bcm ;
+    Left_Turn_Btn:   1, 0, lsn, bcm ;
+    Right_Turn_Btn:  1, 0, lsn, bcm ;
+    Hazard_Btn:      1, 0, lsn, bcm ;
+    Low_Beam_Btn:    1, 0, lsn, bcm ;
+    High_Beam_Btn:   1, 0, lsn, bcm ;
+    Parking_Btn:     1, 0, lsn, bcm ;
+    Brake_Btn:       1, 0, lsn, bcm ;
+    Reverse_Btn:     1, 0, lsn, bcm ;
+    Front_Fog_Btn:   1, 0, lsn, bcm ;
+    Rear_Fog_Btn:    1, 0, lsn, bcm ;
+    Flash_Btn:       1, 0, lsn, bcm ;
 }
 
 Frames {
     LSN_Input_Frame : 0x14, lsn, 5 {
-        Left_Turn_Btn, 37 ;
-        Right_Turn_Btn, 36 ;
-        Fog_Btn, 35 ;
-        Flash_Btn, 34 ;
-        Brake_Btn, 29 ;
-        Reverse_Btn, 28 ;
-        Low_Beam_Btn, 26 ;
-        High_Beam_Btn, 25 ;
-        Hazard_Btn, 24 ;
+        Low_Beam_Btn,    31 ;   /* byte 3, bit 7 */
+        Left_Turn_Btn,   30 ;   /* byte 3, bit 6 */
+        Right_Turn_Btn,  29 ;   /* byte 3, bit 5 */   <-- collides with Rear_Fog in code, fix gateway first
+        Hazard_Btn,      35 ;   /* byte 4, bit 3 */
+        High_Beam_Btn,   18 ;   /* byte 2, bit 2 */
+        Parking_Btn,     20 ;   /* byte 2, bit 4 */
+        Front_Fog_Btn,   16 ;   /* byte 2, bit 0 */
+        Rear_Fog_Btn,    29 ;   /* ⚠ currently same as Right_Turn in gateway.py - resolve! */
+        Brake_Btn,       14 ;   /* byte 1, bit 6 */
+        Reverse_Btn,      9 ;   /* byte 1, bit 1 */
+        Flash_Btn,       34 ;   /* byte 4, bit 2 - currently hardcoded False in gateway */
     }
 }
 
@@ -63,4 +67,3 @@ Schedule_tables {
 y 10.0 ms ;
         SlaveResp delay 10.0 ms ;
     }
-}
