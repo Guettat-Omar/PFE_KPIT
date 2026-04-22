@@ -150,6 +150,8 @@ class BcmGateway:
 
         # Front/Rear Fog Lights overlap in the physical scheme provided
         if headlight_signals.get("FrontFogLed") == 1:
+            combined_signals["Led_B1_1"] = 1
+            combined_signals["Led_B3_7"] = 1
             combined_signals["Led_B0_3"] = 1
             combined_signals["Led_B2_1"] = 1
         
