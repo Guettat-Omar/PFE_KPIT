@@ -45,12 +45,30 @@ class BcmGateway:
                     crc <<= 1
                 crc &= 0xFF
         return crc ^ 0xFF
+    
+    def decode_wbp_frame(self, wbp_lin_data: bytes):
+        state_to_cmd = {
+            0: 0,  # OFF       → STOP
+            1: 1,  # UP        → UP
+            2: 1,  # UP_AUTO   → UP
+            3: 2,  # DOWN      → DOWN
+            4: 2,  # DOWN_AUTO → DOWN
+        }
+        commands =[]
+        for i in range(4):
+            ERR = (wbp_lin_data[i] >> 3) & 0x01
+            window_state = wbp_lin_data[i] & 0x07
+            if ERR:
+                commands.append(0)  # If there's an error, treat it as all windows stopped
+            else:
+                commands.append(state_to_cmd.get(window_state,0))
+        return commands
 
-    def process_and_send(self, lsn_lin_data: bytes, flash_state: bool) -> bytes | None:
+    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> bytes | None:
         """
         This runs every 30ms cycle.
         """
-        if not self.db or not lsn_lin_data or len(lsn_lin_data) < 5:
+        if not self.db or not lsn_lin_data or len(lsn_lin_data) < 5 or not wbp_lin_data or len(wbp_lin_data) < 4:
             return None
             
         # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout
@@ -71,10 +89,6 @@ class BcmGateway:
         right_btn    = bool((lsn_lin_data[3] >> 5) & 1)
         
         hazard_btn   = bool((lsn_lin_data[4] >> 3) & 1) # Double check this is correct on your board
-        # Verified by frame capture:
-        #   Idle baseline:          00 00 40 00 00 00 -> byte 2 = 0x40 (bit 6 always on)
-        #   High beam pressed:      00 00 04 00 00 00 -> byte 2 = 0x04 -> bit 2
-        #   Low beam (stalk pos 2): 00 00 58 00 00 00 -> byte 2 = 0x58 = 0x40(idle)+0x10(park)+0x08(low) -> bit 3
         low_beam_sw  = bool((lsn_lin_data[2] >> 3) & 1) # byte 2, bit 3
         ftp_not_pressed = bool((lsn_lin_data[2] >> 6) & 1)  # normally closed = 1 when not pressed
         ftp_btn = not ftp_not_pressed                          # inverted: True when pressed
@@ -96,6 +110,9 @@ class BcmGateway:
             f"ftp={ftp_btn} fog_f={front_fog_sw} fog_r={rear_fog_sw} "
             f"brake={brake_sw} rev={reverse_sw}"
         )
+        window_commands = self.decode_wbp_frame(wbp_lin_data)
+        logger.info(f"[WBP] Window commands: {window_commands}")
+
 
         # Step 2: Feed the State Machines
         self.turn_sm.update(left_btn, right_btn, hazard_btn)
@@ -108,7 +125,6 @@ class BcmGateway:
         headlight_signals = self.headlight_sm.get_light_cmd_bits(ftp_btn)
         brake_signals = self.brake_sm.get_brake_cmd_bits()
         reverse_signals = self.reverse_sm.get_reverse_cmd_bits()
-
 
         # Step 4: Combine into the exact DBC mappings based on the new LED hardware table!
         combined_signals = {

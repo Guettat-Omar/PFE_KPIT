@@ -73,6 +73,8 @@ def main():
     LSN_DIAG_LEN = 8
 
     loop_counter = 0
+    WBP_FRAME_ID = 0x12
+    WBP_PAYLOAD_LEN = 4
 
     while True:
         try:
@@ -83,10 +85,12 @@ def main():
 
             # Step B: Read Inputs from LIN Network
             lsn_payload = None
+            wbp_payload = None
             if HARDWARE_AVAILABLE:
                 # Normal Polling
                 lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-                
+                wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+
                 # Step B.2: Periodic Diagnostic Heartbeat (Once every ~1 second)
                 if loop_counter % 50 == 0:
                     try:
@@ -105,9 +109,10 @@ def main():
             else:
                 # Simulation Mode: Inject fake 5-byte off-state payload
                 lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+                wbp_payload = b'\x00\x00\x00\x00'
 
             # Step C: Feed inputs to the Brains (Gateway -> State Machines)
-            can_payload = gw.process_and_send(lsn_payload, is_flashing)
+            can_payload = gw.process_and_send(lsn_payload, wbp_payload, is_flashing)
 
             # Step D: Broadcast intended outputs to CAN Network
             if can_payload:
