@@ -5,7 +5,8 @@ LIN_speed = 19.2 kbps;
 
 Nodes {
   Master: bcm, 5.0 ms, 0.1 ms ;
-  Slaves: scs, wbp, wpa,
+  Slaves: scs, wbp, wpa,lsn;
+}
 
 Signals {
     Left_Turn_Btn:   1, 0, lsn, bcm ;
@@ -19,6 +20,10 @@ Signals {
     Front_Fog_Btn:   1, 0, lsn, bcm ;
     Rear_Fog_Btn:    1, 0, lsn, bcm ;
     Flash_Btn:       1, 0, lsn, bcm ;
+    Window1_State:   8, 0, wbp, bcm ;
+    Window2_State:   8, 0, wbp, bcm ;
+    Window3_State:   8, 0, wbp, bcm ;
+    Window4_State:   8, 0, wbp, bcm ;
 }
 
 Frames {
@@ -34,6 +39,12 @@ Frames {
         Brake_Btn,       14 ;   /* byte 1, bit 6 */
         Reverse_Btn,      9 ;   /* byte 1, bit 1 */
         Flash_Btn,       34 ;   /* byte 4, bit 2 - currently hardcoded False in gateway */
+    }
+    WBP_Frame : 0x12, wbp, 4 {
+        Window1_State,  0 ;
+        Window2_State,  8 ;
+        Window3_State, 16 ;
+        Window4_State, 24 ;
     }
 }
 
@@ -58,12 +69,12 @@ Diagnostic_frames {
 Schedule_tables {
     Normal_Table {
         LSN_Input_Frame delay 5.0 ms ;
+        WBP_Frame delay 5.0;
     }
     Diagnostic_Table {
         MasterReq delay 10.0 ms ;
         SlaveResp delay 10.0 ms ;
     }
 }
-y 10.0 ms ;
-        SlaveResp delay 10.0 ms ;
-    }
+
+
