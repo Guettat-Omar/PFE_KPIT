@@ -64,9 +64,8 @@ class BcmGateway:
         """
         This runs every 30ms cycle.
         """
-        if not self.db or not lsn_lin_data or len(lsn_lin_data) < 5 or not wbp_lin_data or len(wbp_lin_data) < 4:
-            return None
-            
+        if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 4:
+            return None 
         # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout
         # BUTTON_LEFT_TURN = (4, 5) -> byte 4, bit 5
         # BUTTON_RIGHT_TURN = (4, 4) -> byte 4, bit 4

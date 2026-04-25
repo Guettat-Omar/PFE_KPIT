@@ -23,8 +23,9 @@ class LINMaster:
         self.ser.flush()
         time.sleep(13 * (1.0 / (self.baud_rate // 4)))
         self.ser.baudrate = self.baud_rate
-        time.sleep(0.02)   # stabilisation: let SoftwareSerial recover before sync byte
         self.ser.reset_input_buffer() 
+        time.sleep(0.02)   # stabilisation: let SoftwareSerial recover before sync byte
+        
         
     @staticmethod
     def calculate_pid(frame_id):

@@ -115,12 +115,6 @@ def main():
                     logger.warning("[WBP] No response using zero-fallback.")
                     wbp_payload = b'\x00\x00\x00\x00'
                     wbp_valid = False
-                if lsn_valid:
-                    can_payload = gw.process_and_send(lsn_payload, wbp_payload, is_flashing)
-                    if can_payload:
-                        can_id = gw.light_cmd_msg.frame_id
-                        if HARDWARE_AVAILABLE:
-                            send(can_id, list(can_payload))
                 else:
                     logger.warning("[BCM] Skipping CAN send  LSN data invalid this cycle.")
 
