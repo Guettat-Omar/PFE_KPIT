@@ -88,28 +88,62 @@ def main():
             wbp_payload = None
             if HARDWARE_AVAILABLE:
                 # Normal Polling
-                lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-                wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+                try:
+                    lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
+                except Exception as e:
+                    logger.error(f"[LSN] Frame request failed: {e}")
+                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+
+                try:
+                    wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+                except Exception as e:
+                    logger.error(f"[WBP] Frame request failed: {e}")
+                    wbp_payload = b'\x00\x00\x00\x00'
+
+                # Fallback: request_frame() returns None on LIN errors (e.g. timeout, checksum).
+                # Without these guards the gateway returns None and BCM stops sending CAN
+                # messages entirely, causing the LSN CAN self-healing loop to fire.
+                lsn_valid = True
+                wbp_valid = True
+                
+                if lsn_payload is None:
+                    logger.warning("[LSN] No response  using zero-fallback.")
+                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+                    lsn_valid = False
+                
+                if wbp_payload is None:
+                    logger.warning("[WBP] No response using zero-fallback.")
+                    wbp_payload = b'\x00\x00\x00\x00'
+                    wbp_valid = False
+                if lsn_valid:
+                    can_payload = gw.process_and_send(lsn_payload, wbp_payload, is_flashing)
+                    if can_payload:
+                        can_id = gw.light_cmd_msg.frame_id
+                        if HARDWARE_AVAILABLE:
+                            send(can_id, list(can_payload))
+                else:
+                    logger.warning("[BCM] Skipping CAN send  LSN data invalid this cycle.")
 
                 # Step B.2: Periodic Diagnostic Heartbeat (Once every ~1 second)
+                # AFTER (fixed)
                 if loop_counter % 50 == 0:
                     try:
                         diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
-                        node_state = diag_payload[0]
-                        can_health = diag_payload[1]
-                        
-                        if node_state == 3 or can_health == 0xFF:
-                            logger.critical(f"LSN DIAGNOSTIC FAULT DETECTED: NodeState={node_state}, CAN={can_health}. LSN is failing!")
+                        if diag_payload is None:
+                            logger.warning("[DIAG] No response from LSN diagnostic frame.")
                         else:
-                            logger.info(f"LSN Health OK: NodeState={node_state}")
-                            
+                            node_state = diag_payload[0]
+                            can_health = diag_payload[1]
+                            if node_state == 3 or can_health == 0xFF:
+                                logger.critical(f"LSN DIAGNOSTIC FAULT DETECTED: NodeState={node_state}, CAN={can_health}. LSN is failing!")
+                            else:
+                                logger.info(f"LSN Health OK: NodeState={node_state}")
                     except Exception as diag_err:
-                        logger.error(f"[DIAG] Diagnostic request to LSN failed - Node may be offline: {diag_err}")
+                        logger.error(f"[DIAG] Diagnostic request to LSN failed  Node may be offline: {diag_err}")
                 
             else:
-                # Simulation Mode: Inject fake 5-byte off-state payload
-                lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-                wbp_payload = b'\x00\x00\x00\x00'
+                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+                    wbp_payload = b'\x00\x00\x00\x00'
 
             # Step C: Feed inputs to the Brains (Gateway -> State Machines)
             can_payload = gw.process_and_send(lsn_payload, wbp_payload, is_flashing)

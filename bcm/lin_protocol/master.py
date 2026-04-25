@@ -7,7 +7,7 @@ from .exceptions import *
 class LINMaster:
     def __init__(self, serial_port=DEFAULT_SERIAL_PORT, baud_rate=DEFAULT_BAUD_RATE, 
                  wakeup_pin=DEFAULT_WAKEUP_PIN):
-        self.ser = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.1)
+        self.ser = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.5)
         self.baud_rate = baud_rate
         self.sleep_time_per_bit = 1.0 / baud_rate
         self.wakeup_pin = wakeup_pin
@@ -17,12 +17,14 @@ class LINMaster:
         GPIO.output(self.wakeup_pin, GPIO.HIGH)
         
     def send_break(self):
-        """Send LIN break signal using UART hardware break condition."""
-        self.ser.break_condition = True
-        time.sleep(0.001)              # 1 ms ≥ 13 bit-times at 19200 baud
-        self.ser.break_condition = False
-        time.sleep(0.0002)             # inter-frame space (line idles HIGH)
-        self.ser.reset_input_buffer()
+        """Send LIN break signal"""
+        self.ser.baudrate = self.baud_rate // 4
+        self.ser.write(bytes([BREAK_BYTE]))
+        self.ser.flush()
+        time.sleep(13 * (1.0 / (self.baud_rate // 4)))
+        self.ser.baudrate = self.baud_rate
+        time.sleep(0.02)   # stabilisation: let SoftwareSerial recover before sync byte
+        self.ser.reset_input_buffer() 
         
     @staticmethod
     def calculate_pid(frame_id):

@@ -2,8 +2,12 @@
 volatile uint8_t window_states[4];
 
 void lin_slave_init() {
-    Serial.begin(19200); 
-    UCSR0B |= (1 << RXCIE0); 
+    UBRR0H = 0;
+    UBRR0L = 51;
+    // Enable receiver and transmitter
+    UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0);
+    // 8 data bits, 1 stop bit, no parity
+    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
     sei();
 }
 
@@ -43,7 +47,7 @@ ISR (USART_RX_vect){
             UDR0 = window_states[i];
         }
         while (!(UCSR0A & (1 << UDRE0)));
-        UDR0 = calculate_checksum(window_states, 4);
+        UDR0 = calculate_checksum(window_states, calculate_pid(WBP_FRAME), 4);
 
         state = LINSlaveState::WAIT_BREAK;
         break;
@@ -56,8 +60,8 @@ uint8_t calculate_pid(uint8_t frame_id) {
     uint8_t p1 = !(((frame_id >> 1) & 0x01) ^ ((frame_id >> 3) & 0x01) ^ ((frame_id >> 4) & 0x01) ^ ((frame_id >> 5) & 0x01)) & 0x01;
     return (p1 << 7) | (p0 << 6) | frame_id;
 }
-uint8_t calculate_checksum(volatile uint8_t* data, uint8_t length) {
-    uint8_t sum = 0;
+uint8_t calculate_checksum(volatile uint8_t* data, uint8_t pid, uint8_t length) {
+    uint16_t sum = pid;
     for (uint8_t i = 0; i < length; i++) {
         sum += data[i];
         if (sum > 255) {

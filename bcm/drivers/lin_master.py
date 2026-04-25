@@ -1,6 +1,6 @@
 import logging
 from bcm.lin_protocol.master import LINMaster
-from bcm.lin_protocol.exceptions import LINChecksumError, LINTimeoutError
+from bcm.lin_protocol.exceptions import LINChecksumError, LINTimeoutError,LINFrameError
 from bcm.config import LIN_BAUDRATE
 logger = logging.getLogger(__name__)
 master_instance = None
@@ -22,6 +22,9 @@ def request_frame(frame_id: int, length: int) -> bytes | None:
         return None
     except LINTimeoutError as e:
         logger.error(f"Timeout error for frame ID {hex(frame_id)}: {e}")
+        return None
+    except LINFrameError as e:          
+        logger.error(f"Frame error for frame {hex(frame_id)}: {e}")
         return None
 
 def send_frame(frame_id: int, data: bytes):

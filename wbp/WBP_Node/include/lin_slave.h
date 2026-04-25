@@ -10,3 +10,4 @@ enum class LINSlaveState {
  void lin_slave_init();
  uint8_t calculate_pid(uint8_t frame_id);
  void lin_slave_process (uint8_t* data, uint8_t length);
+uint8_t calculate_checksum(volatile uint8_t* data, uint8_t pid, uint8_t length);

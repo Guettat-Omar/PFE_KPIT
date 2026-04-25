@@ -48,20 +48,16 @@ class BcmGateway:
     
     def decode_wbp_frame(self, wbp_lin_data: bytes):
         state_to_cmd = {
-            0: 0,  # OFF       → STOP
-            1: 1,  # UP        → UP
-            2: 1,  # UP_AUTO   → UP
-            3: 2,  # DOWN      → DOWN
-            4: 2,  # DOWN_AUTO → DOWN
+            0: 0,  # WINDOW_OFF       → STOP
+            1: 2,  # WINDOW_DOWN      → DOWN
+            2: 1,  # WINDOW_UP        → UP
+            3: 1,  # WINDOW_UP_AUTO   → UP
+            4: 2,  # WINDOW_DOWN_AUTO → DOWN
         }
         commands =[]
         for i in range(4):
-            ERR = (wbp_lin_data[i] >> 3) & 0x01
             window_state = wbp_lin_data[i] & 0x07
-            if ERR:
-                commands.append(0)  # If there's an error, treat it as all windows stopped
-            else:
-                commands.append(state_to_cmd.get(window_state,0))
+            commands.append(state_to_cmd.get(window_state, 0))
         return commands
 
     def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> bytes | None:
