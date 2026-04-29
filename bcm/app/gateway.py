@@ -48,11 +48,11 @@ class BcmGateway:
     
     def decode_wbp_frame(self, wbp_lin_data: bytes):
         state_to_cmd = {
-            0: 0,  # WINDOW_OFF       → STOP
-            1: 2,  # WINDOW_DOWN      → DOWN
-            2: 1,  # WINDOW_UP        → UP
-            3: 1,  # WINDOW_UP_AUTO   → UP
-            4: 2,  # WINDOW_DOWN_AUTO → DOWN
+            0: 0,  # WINDOW_OFF       ? STOP
+            1: 2,  # WINDOW_DOWN      ? DOWN
+            2: 1,  # WINDOW_UP        ? UP
+            3: 1,  # WINDOW_UP_AUTO   ? UP
+            4: 2,  # WINDOW_DOWN_AUTO ? DOWN
         }
         commands =[]
         for i in range(4):
@@ -65,7 +65,7 @@ class BcmGateway:
         This runs every 30ms cycle.
         """
         if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 4:
-            return None 
+          return None
         # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout
         # BUTTON_LEFT_TURN = (4, 5) -> byte 4, bit 5
         # BUTTON_RIGHT_TURN = (4, 4) -> byte 4, bit 4

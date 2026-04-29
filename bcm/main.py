@@ -77,91 +77,73 @@ def main():
     WBP_PAYLOAD_LEN = 4
 
     while True:
-        try:
-            loop_counter += 1
-            
-            # Step A: Update the heartbeat
-            is_flashing = flash_timer.update()
-
-            # Step B: Read Inputs from LIN Network
-            lsn_payload = None
-            wbp_payload = None
-            if HARDWARE_AVAILABLE:
-                # Normal Polling
-                try:
-                    lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-                except Exception as e:
-                    logger.error(f"[LSN] Frame request failed: {e}")
-                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-
-                try:
-                    wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
-                except Exception as e:
-                    logger.error(f"[WBP] Frame request failed: {e}")
-                    wbp_payload = b'\x00\x00\x00\x00'
-
-                # Fallback: request_frame() returns None on LIN errors (e.g. timeout, checksum).
-                # Without these guards the gateway returns None and BCM stops sending CAN
-                # messages entirely, causing the LSN CAN self-healing loop to fire.
-                lsn_valid = True
-                wbp_valid = True
-                
-                if lsn_payload is None:
-                    logger.warning("[LSN] No response  using zero-fallback.")
-                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-                    lsn_valid = False
-                
-                if wbp_payload is None:
-                    logger.warning("[WBP] No response using zero-fallback.")
-                    wbp_payload = b'\x00\x00\x00\x00'
-                    wbp_valid = False
-                else:
-                    logger.warning("[BCM] Skipping CAN send  LSN data invalid this cycle.")
-
-                # Step B.2: Periodic Diagnostic Heartbeat (Once every ~1 second)
-                # AFTER (fixed)
-                if loop_counter % 50 == 0:
-                    try:
-                        diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
-                        if diag_payload is None:
-                            logger.warning("[DIAG] No response from LSN diagnostic frame.")
-                        else:
-                            node_state = diag_payload[0]
-                            can_health = diag_payload[1]
-                            if node_state == 3 or can_health == 0xFF:
-                                logger.critical(f"LSN DIAGNOSTIC FAULT DETECTED: NodeState={node_state}, CAN={can_health}. LSN is failing!")
-                            else:
-                                logger.info(f"LSN Health OK: NodeState={node_state}")
-                    except Exception as diag_err:
-                        logger.error(f"[DIAG] Diagnostic request to LSN failed  Node may be offline: {diag_err}")
-                
-            else:
-                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-                    wbp_payload = b'\x00\x00\x00\x00'
-
-            # Step C: Feed inputs to the Brains (Gateway -> State Machines)
-            can_payload = gw.process_and_send(lsn_payload, wbp_payload, is_flashing)
-
-            # Step D: Broadcast intended outputs to CAN Network
-            if can_payload:
-                can_id = gw.light_cmd_msg.frame_id
-                if HARDWARE_AVAILABLE:
-                    send(can_id, list(can_payload))
-                else:
-                    # In simulation, we print it out only if it's changing or periodically to avoid spam
-                    pass # We won't spam the console in simulation
-
-            # Step E: Rest the CPU. 
-            # A 20ms sleep ensures we run at ~50Hz. Fast enough to catch buttons instantly, 
-            # but slow enough to leave 99% of the CPU free for other car functions.
-            time.sleep(0.02)
-
-        except KeyboardInterrupt:
-            logger.info("BCM shutting down gracefully...")
-            break
-        except Exception as e:
-            logger.error(f"Unexpected error in main loop: {e}")
-            time.sleep(1) # Prevent infinite crash-loops from eating all CPU
-
+      try:
+          loop_counter += 1
+  
+          # Step A: Heartbeat
+          is_flashing = flash_timer.update()
+  
+          # Step B: Read LIN
+          lsn_payload = None
+          wbp_payload = None
+  
+          if HARDWARE_AVAILABLE:
+              lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
+              wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+  
+              lsn_valid = lsn_payload is not None
+              wbp_valid = wbp_payload is not None
+  
+              if not lsn_valid:
+                  logger.warning("[LSN] No response this cycle.")
+                  lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+  
+              if not wbp_valid:
+                  logger.warning("[WBP] No response this cycle.")
+                  wbp_payload = b'\x00\x00\x00\x00'
+  
+              # Step C: Process + Send CAN (only if LSN responded)
+              if lsn_valid:
+                  can_payload = gw.process_and_send(
+                      lsn_payload, wbp_payload, is_flashing
+                  )
+                  print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
+                  if can_payload:
+                      can_id = gw.light_cmd_msg.frame_id
+                      send(can_id, list(can_payload))
+                      print(f"[CAN] Sent {can_payload.hex()}", flush=True)
+                  else:
+                      print("[GW] process_and_send returned None", flush=True)
+              else:
+                  logger.warning("[BCM] Skipping CAN LSN invalid this cycle.")
+  
+              # Step D: Periodic diagnostic
+              if loop_counter % 50 == 0:
+                  try:
+                      diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
+                      if diag_payload is None:
+                          logger.warning("[DIAG] No response from LSN.")
+                      else:
+                          node_state = diag_payload[0]
+                          can_health = diag_payload[1]
+                          if node_state == 3 or can_health == 0xFF:
+                              logger.critical(f"LSN DIAGNOSTIC FAULT: NodeState={node_state}, CAN={can_health}")
+                          else:
+                              logger.info(f"LSN Health OK: NodeState={node_state}")
+                  except Exception as diag_err:
+                      logger.error(f"[DIAG] Failed: {diag_err}")
+  
+          else:
+              lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+              wbp_payload = b'\x00\x00\x00\x00'
+  
+          time.sleep(0.002)
+  
+      except KeyboardInterrupt:
+          logger.info("BCM shutting down gracefully...")
+          break
+      except Exception as e:
+          logger.error(f"Unexpected error: {e}")
+          time.sleep(1)
 if __name__ == "__main__":
     main()

@@ -1,5 +1,7 @@
 #include "lin_slave.h"
 volatile uint8_t window_states[4];
+extern volatile bool break_received_flag;
+extern volatile bool response_sent_flag;
 
 void lin_slave_init() {
     UBRR0H = 0;
@@ -21,6 +23,7 @@ ISR (USART_RX_vect){
         if (flag & (1<<FE0))
         {
             state = LINSlaveState::WAIT_SYNC;
+            break_received_flag = true;
         }
         else
         {
@@ -48,7 +51,7 @@ ISR (USART_RX_vect){
         }
         while (!(UCSR0A & (1 << UDRE0)));
         UDR0 = calculate_checksum(window_states, calculate_pid(WBP_FRAME), 4);
-
+        response_sent_flag = true;
         state = LINSlaveState::WAIT_BREAK;
         break;
     default:
