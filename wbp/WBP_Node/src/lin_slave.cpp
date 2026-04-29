@@ -39,21 +39,19 @@ ISR (USART_RX_vect){
         break;
     case LINSlaveState::WAIT_PID:
         if (received_byte == calculate_pid(WBP_FRAME)) {
-            state = LINSlaveState::RESPOND;
-        } else {
-            state = LINSlaveState::WAIT_BREAK;
-        }
-        break;  
-    case LINSlaveState::RESPOND:
-        for (int i = 0; i < 4; i++) {
+            // Send response immediately — no separate RESPOND state needed
+            uint8_t pid = calculate_pid(WBP_FRAME);
+            for (int i = 0; i < 4; i++) {
+                while (!(UCSR0A & (1 << UDRE0)));
+                UDR0 = window_states[i];
+            }
             while (!(UCSR0A & (1 << UDRE0)));
-            UDR0 = window_states[i];
+            UDR0 = calculate_checksum(window_states, pid, 4);
+            response_sent_flag = true;
         }
-        while (!(UCSR0A & (1 << UDRE0)));
-        UDR0 = calculate_checksum(window_states, calculate_pid(WBP_FRAME), 4);
-        response_sent_flag = true;
         state = LINSlaveState::WAIT_BREAK;
-        break;
+        break; 
+
     default:
         break;
     }
