@@ -85,9 +85,11 @@ def main():
                     
                 # Option 3: Flash LEDs synchronously at 1Hz as a visual SOS
                 if fault_toggle:
-                    write_all_chips([0xFF] * 5) # All ON
+                    with config.chips_lock:  # Ensure thread-safe access to the chips
+                        write_all_chips([0xFF] * 5) # All ON
                 else:
-                    write_all_chips([0x00] * 5) # All OFF
+                    with config.chips_lock:  # Ensure thread-safe access to the chips
+                        write_all_chips([0x00] * 5) # All OFF
                 
                 fault_toggle = not fault_toggle
                 time.sleep(1) # Flash explicitly at 1Hz

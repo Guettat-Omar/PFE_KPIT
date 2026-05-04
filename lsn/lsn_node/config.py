@@ -1,5 +1,6 @@
 
 import enum
+import threading
 
 # --- 74HC165 (Parallel-In Serial-Out) � Button Inputs ------------------------
 PIN_165_LOAD_PL   = 23   # PL  - load parallel inputs (active LOW)
@@ -35,3 +36,4 @@ current_node_state = NodeState.INIT
 last_fault_reason = "NONE"
 
 PULSE_US = 0.000001  # 1 microsecond pulse duration for timing GPIO signals
+chips_lock = threading.Lock()

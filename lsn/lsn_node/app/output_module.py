@@ -98,7 +98,8 @@ def run(bus):
                         raw_shift_data = led_data[::-1]
                         
                         logger.debug("Writing validated data to LED shift registers...")
-                        write_all_chips(raw_shift_data)
+                        with config.chips_lock:  # Ensure thread-safe access to the chips
+                            write_all_chips(raw_shift_data)
                         
                         # Send response back to CAN master
                         can_msg = can.Message(arbitration_id=CAN_frame_id_response, data=msg.data, is_extended_id=False)
