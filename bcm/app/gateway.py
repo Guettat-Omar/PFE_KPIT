@@ -61,7 +61,7 @@ class BcmGateway:
             commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 
         return commands
 
-    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> bytes | None:
+    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> tuple[bytes, bytes] | None:
         """
         This runs every 30ms cycle.
         """

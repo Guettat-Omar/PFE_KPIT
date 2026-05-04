@@ -21,7 +21,7 @@ Each entry contains:
 
 ---
 
-## BLOCKING-1 — Hardcoded Windows absolute paths in `bcm/config.py`
+## BLOCKING-1 — Hardcoded Windows absolute paths in `bcm/config.py` [Fixed]
 
 **File:** `bcm/config.py`, lines 1–2
 **Status:** Carried over from Cycle 1. Not fixed.
@@ -49,7 +49,7 @@ This resolves correctly on any machine regardless of where the project is cloned
 
 ---
 
-## BLOCKING-2 — `lsn/lin_protocol/slave.py` false BREAK detection on WBP data bytes
+## BLOCKING-2 — `lsn/lin_protocol/slave.py` false BREAK detection on WBP data bytes [Fixed]
 
 **File:** `lsn/lin_protocol/slave.py`, line 55
 **Status:** Documented in `LIN_DIAGNOSTIC_REPORT.md` as BUG #2. Not fixed.
@@ -109,7 +109,7 @@ After fixing the call signature, also add test cases that exercise the WBP path:
 
 ---
 
-## BLOCKING-4 — LDF bit collision: `Right_Turn_Btn` and `Rear_Fog_Btn` both at bit position 29
+## BLOCKING-4 — LDF bit collision: `Right_Turn_Btn` and `Rear_Fog_Btn` both at bit position 29 [Fixed]
 
 **File:** `LDF.ldf`, lines 33 and 38
 **Status:** Carried over from Cycle 1. Not fixed.
@@ -130,7 +130,7 @@ Decide the correct bit position for each signal by tracing it to the physical 74
 
 ---
 
-## BLOCKING-5 — Blocking `while` loops inside `USART_RX_vect` ISR
+## BLOCKING-5 — Blocking `while` loops inside `USART_RX_vect` ISR [Fixed]
 
 **File:** `wbp/WBP_Node/src/lin_slave.cpp`, lines 44–49
 **Status:** Carried over from Cycle 1. Not fixed.
@@ -162,7 +162,7 @@ Use the UART Data Register Empty interrupt (`UDRIE0`) for non-blocking transmiss
 
 ---
 
-## BLOCKING-6 — WBP window commands computed but never used
+## BLOCKING-6 — WBP window commands computed but never used [Fixed]
 
 **File:** `bcm/app/gateway.py`, lines 108–109
 **Status:** New finding in Cycle 2.
