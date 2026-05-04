@@ -24,6 +24,10 @@ Signals {
     Window2_State:   8, 0, wbp, bcm ;
     Window3_State:   8, 0, wbp, bcm ;
     Window4_State:   8, 0, wbp, bcm ;
+    WBP_NodeState:   8, 1, wbp, bcm ;
+    WBP_AdcHealth:   8, 0, wbp, bcm ;
+    WBP_Reserved0:   8, 0, wbp, bcm ;
+    WBP_Reserved1:   8, 0, wbp, bcm ;
 }
 
 Frames {
@@ -45,6 +49,13 @@ Frames {
         Window2_State,  8 ;
         Window3_State, 16 ;
         Window4_State, 24 ;
+    }
+    WBP_Diagnostic_Frame : 0x3E, wbp, 4 {
+        WBP_NodeState, 0 ;
+        WBP_AdcHealth, 8 ;
+        WBP_Reserved0, 16 ;
+        WBP_Reserved1, 24 ;
+
     }
 }
 
@@ -69,11 +80,12 @@ Diagnostic_frames {
 Schedule_tables {
     Normal_Table {
         LSN_Input_Frame delay 5.0 ms ;
-        WBP_Frame delay 5.0;
+        event_triggered WBP_Frame delay 5.0 ms ;
     }
     Diagnostic_Table {
         MasterReq delay 10.0 ms ;
         SlaveResp delay 10.0 ms ;
+        WBP_Diagnostic_Frame delay 10.0 ms ;
     }
 }
 

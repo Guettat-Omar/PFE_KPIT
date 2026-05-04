@@ -23,8 +23,8 @@ def request_frame(frame_id: int, length: int) -> bytes | None:
     except LINTimeoutError as e:
         logger.error(f"Timeout error for frame ID {hex(frame_id)}: {e}")
         return None
-    except LINFrameError as e:          
-        logger.error(f"Frame error for frame {hex(frame_id)}: {e}")
+    except LINFrameError as e:
+        logger.debug(f"Frame error for frame {hex(frame_id)}: {e}")  # debug not error
         return None
 
 def send_frame(frame_id: int, data: bytes):

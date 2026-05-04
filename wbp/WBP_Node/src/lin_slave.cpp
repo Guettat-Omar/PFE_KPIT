@@ -1,10 +1,13 @@
 #include "lin_slave.h"
+#include <string.h>
 volatile uint8_t window_states[4];
 extern volatile bool break_received_flag;
 extern volatile bool response_sent_flag;
 volatile uint8_t tx_index = 0;
 volatile uint8_t tx_length = 0;
 volatile uint8_t tx_buffer[5];
+static volatile uint8_t last_buffer[5] = {0};
+
 
 void lin_slave_init() {
     UBRR0H = 0;
@@ -49,14 +52,44 @@ ISR (USART_RX_vect){
             }
             tx_buffer[4] = calculate_checksum(tx_buffer, pid, 4);
             tx_index = 0;
+            if (memcmp((const void*)last_buffer, (const void*)tx_buffer, 5) == 0)
+            {
+                UCSR0B &= ~(1 << UDRIE0);
+            }
+            else{
+                UCSR0B |= (1 << UDRIE0);
+                for (uint8_t i = 0; i < 5; ++i) {
+                    last_buffer[i] = tx_buffer[i];
+                }
+                tx_length = 5;
+            }}
+        else if (received_byte == calculate_pid(WBP_DIAG_FRAME_ID))
+        {
+            uint8_t pid = calculate_pid(WBP_DIAG_FRAME_ID);
+            uint8_t adc_health = 0x00;
+            for (int i = 0; i < 4; i++) {
+                if (window_states[i] > 4) {
+                    adc_health = 0xFF;
+                    break;
+                }
+            }
+            tx_buffer[0] = 0x01; 
+            tx_buffer[1] = adc_health; 
+            tx_buffer[2] = 0x00; // Reserved
+            tx_buffer[3] = 0x00; // Reserved
+            tx_buffer[4] = calculate_checksum(tx_buffer, pid, 4);
+            tx_index = 0;
+            
             UCSR0B |= (1 << UDRIE0);
             tx_length = 5;
+        
+        }
         state = LINSlaveState::WAIT_BREAK;
         break; 
 
     default:
         break;
-    }
+    
 }}
  ISR(USART_UDRE_vect){
     if (tx_index<tx_length)

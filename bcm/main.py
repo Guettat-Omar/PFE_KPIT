@@ -9,6 +9,7 @@ import logging
 from bcm.config import DBC_path, CAN_CHANNEL
 from bcm.app.gateway import BcmGateway
 from bcm.app.flash_timer import FlashTimer
+from bcm.app.wbp_monitor import WBPMonitor
 import logging.handlers
 
 # Mock imports for hardware drivers. 
@@ -39,10 +40,12 @@ logger.addHandler(file_handler)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(log_formatter)
 logger.addHandler(console_handler)
+
 def main():
     logger.info("Starting Body Control Module (BCM)...")
     bus = None
-    
+    wbp_monitor = WBPMonitor()
+
     # 1. Initialize Communication Buses
     if HARDWARE_AVAILABLE:
         # Initialize CAN (e.g., 'can0')
@@ -84,6 +87,9 @@ def main():
     WBP_FRAME_ID = 0x12
     WBP_PAYLOAD_LEN = 4
 
+    WBP_DIAG_FRAME_ID = 0x3E
+    WBP_DIAG_LEN = 4
+
     while True:
       try:
           loop_counter += 1
@@ -97,18 +103,17 @@ def main():
   
           if HARDWARE_AVAILABLE:
               lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-              wbp_payload = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+              raw_wbp = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
   
               lsn_valid = lsn_payload is not None
-              wbp_valid = wbp_payload is not None
+              wbp_payload = wbp_monitor.update(raw_wbp)
   
               if not lsn_valid:
                   logger.warning("[LSN] No response this cycle.")
                   lsn_payload = b'\x00\x00\x00\x00\x00\x00'
   
-              if not wbp_valid:
-                  logger.warning("[WBP] No response this cycle.")
-                  wbp_payload = b'\x00\x00\x00\x00'
+              if not wbp_monitor.is_healthy:
+                logger.warning("[WBP] Node fault — no response for too long.")
   
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
@@ -136,16 +141,27 @@ def main():
               # Step D: Periodic diagnostic
               if loop_counter % 50 == 0:
                   try:
-                      diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
-                      if diag_payload is None:
+                      lsn_diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
+                      wbp_diag_payload = request_frame(WBP_DIAG_FRAME_ID, WBP_DIAG_LEN)
+
+                      if lsn_diag_payload is None:
                           logger.warning("[DIAG] No response from LSN.")
                       else:
-                          node_state = diag_payload[0]
-                          can_health = diag_payload[1]
+                          node_state = lsn_diag_payload[0]
+                          can_health = lsn_diag_payload[1]
                           if node_state == 3 or can_health == 0xFF:
                               logger.critical(f"LSN DIAGNOSTIC FAULT: NodeState={node_state}, CAN={can_health}")
                           else:
                               logger.info(f"LSN Health OK: NodeState={node_state}")
+                      if wbp_diag_payload is None:
+                          logger.warning("[DIAG] No response from WBP.")
+                      else:
+                          node_state = wbp_diag_payload[0]
+                          adc_health = wbp_diag_payload[1]
+                          if node_state == 3 or adc_health == 0xFF:
+                              logger.critical(f"WBP DIAGNOSTIC FAULT: NodeState={node_state}, ADC={adc_health}")
+                          else:
+                              logger.info(f"WBP Health OK: NodeState={node_state}")
                   except Exception as diag_err:
                       logger.error(f"[DIAG] Failed: {diag_err}")
   

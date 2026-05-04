@@ -6,6 +6,7 @@
 #include <avr/interrupt.h>
 
 #define WBP_FRAME 0x12
+#define WBP_DIAG_FRAME_ID 0x3E
 
 enum class LINSlaveState {
     WAIT_BREAK,
