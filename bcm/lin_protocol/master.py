@@ -19,7 +19,7 @@ class LINMaster:
         
     def send_break(self):
       # Inter-frame gap — let bus settle and drain any stale bytes
-      time.sleep(0.020)               # 20ms gap between frames
+      time.sleep(0.008)               # 20ms gap between frames
       self.ser.reset_input_buffer()   # flush anything that arrived during gap
   
       self.ser.baudrate = self.baud_rate // 4
@@ -79,7 +79,7 @@ class LINMaster:
       # Wait until buffer has enough bytes or timeout
       # Expected: up to 3 echo bytes + data + checksum
       expected_total = 3 + expected_data_length + 1
-      deadline = time.monotonic() + 0.1  # 100ms timeout
+      deadline = time.monotonic() + 0.030  # 30ms timeout
       
       while time.monotonic() < deadline:
           if self.ser.in_waiting >= expected_total:
