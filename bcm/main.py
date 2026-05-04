@@ -104,18 +104,26 @@ def main():
   
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
-                  can_payload = gw.process_and_send(
+                  result = gw.process_and_send(
                       lsn_payload, wbp_payload, is_flashing
                   )
+                  if result is None:
+                      logger.warning("[GW] process_and_send returned None, skipping CAN send.")
+                      continue
+                  can_payload = result[0]
+                  window_payload = result[1]
                   print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
                   if can_payload:
                       can_id = gw.light_cmd_msg.frame_id
                       send(can_id, list(can_payload))
                       print(f"[CAN] Sent {can_payload.hex()}", flush=True)
-                  else:
-                      print("[GW] process_and_send returned None", flush=True)
+                  if window_payload:
+                      window_id = gw.window_cmd_msg.frame_id
+                      send(window_id, list(window_payload))
+                      print(f"[WINDOW] Sent {window_payload.hex()}", flush=True)
               else:
-                  logger.warning("[BCM] Skipping CAN LSN invalid this cycle.")
+                  logger.warning("[GW] process_and_send returned None, skipping CAN send.")
+        
   
               # Step D: Periodic diagnostic
               if loop_counter % 50 == 0:

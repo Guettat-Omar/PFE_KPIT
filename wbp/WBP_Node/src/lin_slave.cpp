@@ -2,6 +2,9 @@
 volatile uint8_t window_states[4];
 extern volatile bool break_received_flag;
 extern volatile bool response_sent_flag;
+volatile uint8_t tx_index = 0;
+volatile uint8_t tx_length = 0;
+volatile uint8_t tx_buffer[5];
 
 void lin_slave_init() {
     UBRR0H = 0;
@@ -42,19 +45,31 @@ ISR (USART_RX_vect){
             // Send response immediately — no separate RESPOND state needed
             uint8_t pid = calculate_pid(WBP_FRAME);
             for (int i = 0; i < 4; i++) {
-                while (!(UCSR0A & (1 << UDRE0)));
-                UDR0 = window_states[i];
+                tx_buffer[i]= window_states[i];      
             }
-            while (!(UCSR0A & (1 << UDRE0)));
-            UDR0 = calculate_checksum(window_states, pid, 4);
-            response_sent_flag = true;
-        }
+            tx_buffer[4] = calculate_checksum(tx_buffer, pid, 4);
+            tx_index = 0;
+            UCSR0B |= (1 << UDRIE0);
+            tx_length = 5;
         state = LINSlaveState::WAIT_BREAK;
         break; 
 
     default:
         break;
     }
+}}
+ ISR(USART_UDRE_vect){
+    if (tx_index<tx_length)
+    {
+        UDR0 =tx_buffer[tx_index];
+        tx_index++;
+    }
+    else
+    {
+        UCSR0B &= ~(1 << UDRIE0);
+        response_sent_flag = true;
+    }
+    
 }
 uint8_t calculate_pid(uint8_t frame_id) {
     uint8_t p0 = (frame_id & 0x01) ^ ((frame_id >> 1) & 0x01) ^ ((frame_id >> 2) & 0x01) ^ ((frame_id >> 4) & 0x01);

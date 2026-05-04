@@ -28,17 +28,17 @@ Signals {
 
 Frames {
     LSN_Input_Frame : 0x14, lsn, 5 {
-        Low_Beam_Btn,    31 ;   /* byte 3, bit 7 */
+        Low_Beam_Btn,    19 ;   /* byte 3, bit 7 */
         Left_Turn_Btn,   30 ;   /* byte 3, bit 6 */
-        Right_Turn_Btn,  29 ;   /* byte 3, bit 5 */   <-- collides with Rear_Fog in code, fix gateway first
+        Right_Turn_Btn,  29 ;   /* byte 3, bit 5 */   
         Hazard_Btn,      35 ;   /* byte 4, bit 3 */
         High_Beam_Btn,   18 ;   /* byte 2, bit 2 */
         Parking_Btn,     20 ;   /* byte 2, bit 4 */
-        Front_Fog_Btn,   16 ;   /* byte 2, bit 0 */
-        Rear_Fog_Btn,    29 ;   /* ⚠ currently same as Right_Turn in gateway.py - resolve! */
+        Front_Fog_Btn,   31 ;   /* byte 2, bit 0 */
+        Rear_Fog_Btn,    16 ;   /* 
         Brake_Btn,       14 ;   /* byte 1, bit 6 */
         Reverse_Btn,      9 ;   /* byte 1, bit 1 */
-        Flash_Btn,       34 ;   /* byte 4, bit 2 - currently hardcoded False in gateway */
+        Flash_Btn,       22 ;   /* byte 4, bit 2 */
     }
     WBP_Frame : 0x12, wbp, 4 {
         Window1_State,  0 ;

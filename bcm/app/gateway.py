@@ -4,7 +4,7 @@ from bcm.app.reverse_sm import ReverseSignalSM
 import cantools
 from bcm.app.turn_signal_sm import TurnSignalSM
 from bcm.app.headlight_sm import headlightSM
-from bcm.config import LDF_path, DBC_path # we will add DBC_path later, let's pretend it's in config for now
+from bcm.config import LDF_path, DBC_path 
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class BcmGateway:
             self.db = cantools.database.load_file(DBC_path)
             # Find the exact message template from the DBC
             self.light_cmd_msg = self.db.get_message_by_name('LIGHT_CMD')
+            self.window_cmd_msg = self.db.get_message_by_name('WINDOW_CMD')
             logger.info("Gateway initialized and DBC loaded successfully.")
         except Exception as e:
             logger.critical(f"Failed to load DBC file: {e}")
@@ -54,10 +55,10 @@ class BcmGateway:
             3: 1,  # WINDOW_UP_AUTO   ? UP
             4: 2,  # WINDOW_DOWN_AUTO ? DOWN
         }
-        commands =[]
+        commands ={}
         for i in range(4):
             window_state = wbp_lin_data[i] & 0x07
-            commands.append(state_to_cmd.get(window_state, 0))
+            commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 
         return commands
 
     def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> bytes | None:
@@ -193,6 +194,7 @@ class BcmGateway:
         try:
             # First encode with CRC = 0
             can_payload = bytearray(self.light_cmd_msg.encode(combined_signals))
+            window_can_payload = bytearray(self.window_cmd_msg.encode(window_commands))
             
             # Step 6: Calculate E2E CRC on the first 6 bytes (0 through 5)
             # The CRC byte itself is at index 6, which is currently 0
@@ -207,7 +209,7 @@ class BcmGateway:
             can_payload = can_payload[::-1]
             
             logger.debug(f"Encoded CAN Payload with CRC: {can_payload.hex()}")
-            return bytes(can_payload)
+            return bytes(can_payload), bytes(window_can_payload)
         except Exception as e:
             logger.error(f"Failed to encode CAN message: {e}")
             return None

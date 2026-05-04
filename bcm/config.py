@@ -1,5 +1,9 @@
-LDF_path = "C:\\Users\\Omar\\Documents\\ME\\PFE 2026\\KPIT\\Code\\didactic_code\\LDF.ldf"
-DBC_path = "C:\\Users\\Omar\\Documents\\ME\\PFE 2026\\KPIT\\Code\\didactic_code\\BCM_CAN.dbc"
+
+import os
+
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+LDF_path = os.path.join(base_path, "LDF.ldf")
+DBC_path = os.path.join(base_path, "BCM_CAN.dbc")
 
 LIN_BAUDRATE = 19200
 CAN_BITRATE = 500000
