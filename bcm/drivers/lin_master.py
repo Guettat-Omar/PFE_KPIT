@@ -38,3 +38,8 @@ def send_frame(frame_id: int, data: bytes):
     except LINTimeoutError as e:
         logger.error(f"Timeout error when sending frame ID {hex(frame_id)}: {e}")
         return False
+    
+def close_lin_master():
+    global master_instance
+    if master_instance:
+        master_instance.close()

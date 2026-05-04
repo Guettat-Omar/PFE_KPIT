@@ -4,7 +4,8 @@ from bcm.app.reverse_sm import ReverseSignalSM
 import cantools
 from bcm.app.turn_signal_sm import TurnSignalSM
 from bcm.app.headlight_sm import headlightSM
-from bcm.config import LDF_path, DBC_path 
+from bcm.config import LDF_path, DBC_path
+from bcm.utils.crc import calculate_crc8 
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +30,6 @@ class BcmGateway:
         except Exception as e:
             logger.critical(f"Failed to load DBC file: {e}")
             self.db = None
-
-    def _calculate_crc8(self, data: bytes) -> int:
-        """
-        SAE J1850 CRC-8 calculation.
-        Polynomial: 0x1D
-        Initial value: 0xFF
-        """
-        crc = 0xFF
-        for byte in data:
-            crc ^= byte
-            for _ in range(8):
-                if crc & 0x80:
-                    crc = (crc << 1) ^ 0x1D
-                else:
-                    crc <<= 1
-                crc &= 0xFF
-        return crc ^ 0xFF
     
     def decode_wbp_frame(self, wbp_lin_data: bytes):
         state_to_cmd = {
@@ -198,7 +182,7 @@ class BcmGateway:
             
             # Step 6: Calculate E2E CRC on the first 6 bytes (0 through 5)
             # The CRC byte itself is at index 6, which is currently 0
-            crc_val = self._calculate_crc8(bytes(can_payload[0:6]))
+            crc_val = calculate_crc8(bytes(can_payload[0:6]))
             
             # Re-encode or simply inject the CRC into the bytearray
             # Since DBC CRC is exactly byte 6:

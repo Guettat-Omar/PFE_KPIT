@@ -1,6 +1,6 @@
 import sys
 import os
-
+import signal
 # Add the 'didactic_code' root to Python's path so it can find the 'bcm' package
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -15,7 +15,7 @@ import logging.handlers
 # We use try/except so we can run this on Windows for testing without Raspberry Pi errors.
 try:
     from bcm.drivers.can_driver import init_can, send
-    from bcm.drivers.lin_master import init_lin_master, request_frame
+    from bcm.drivers.lin_master import init_lin_master, request_frame, close_lin_master
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
@@ -41,7 +41,8 @@ console_handler.setFormatter(log_formatter)
 logger.addHandler(console_handler)
 def main():
     logger.info("Starting Body Control Module (BCM)...")
-
+    bus = None
+    
     # 1. Initialize Communication Buses
     if HARDWARE_AVAILABLE:
         # Initialize CAN (e.g., 'can0')
@@ -51,7 +52,14 @@ def main():
         init_lin_master('/dev/serial0')
     else:
         logger.warning("Simulation Mode: Hardware buses skipped.")
-
+    
+    def handle_sigterm(signum, frame):
+            logger.warning(f"Received Linux signal {signum}. Shutting down safely...")
+            bus.shutdown()
+            close_lin_master()
+            logger.info("--- BCM Node Shutdown Sequence Complete ---")
+            os._exit(0)
+    signal.signal(signal.SIGTERM, handle_sigterm)
     # 2. Initialize the Application Layer (Gateway & Timers)
     gw = BcmGateway(DBC_path)
     if not gw.db:

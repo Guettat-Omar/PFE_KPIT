@@ -10,6 +10,7 @@ import os
 import time
 import logging
 import threading
+from utils.crc import calculate_crc8
 
 # Use absolute path resolution to guarantee we find the 'bcm' packages
 current_file_path = os.path.abspath(__file__)
@@ -39,18 +40,6 @@ class InjectorState:
     active = True
 
 state = InjectorState()
-
-def _calculate_crc8(data: bytes, poly: int = 0x1D, init: int = 0xFF) -> int:
-    crc = init
-    for byte in data:
-        crc ^= byte
-        for _ in range(8):
-            if crc & 0x80:
-                crc = (crc << 1) ^ poly
-            else:
-                crc <<= 1
-            crc &= 0xFF
-    return crc ^ 0xFF
 
 def attack_loop():
     """ Runs continuously, blasting CAN messages to the LSN """
@@ -96,7 +85,7 @@ def attack_loop():
             payload = bytearray(light_msg.encode(signals))
             
             # Step: Calculate CRC on first 6 bytes
-            crc_val = _calculate_crc8(bytes(payload[0:6]))
+            crc_val = calculate_crc8(bytes(payload[0:6]))
             
             # If "Bad CRC" is active, corrupt the math
             if state.bad_crc:

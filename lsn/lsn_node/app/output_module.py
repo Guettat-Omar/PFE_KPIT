@@ -14,26 +14,11 @@ import subprocess
 from drivers.hc595_driver import *
 from config import CAN_frame_id, CAN_frame_id_response,NodeState
 import config
+from utils.crc import calculate_crc8
 
 logger = logging.getLogger(__name__)
 comm_logger = logging.getLogger("communication")
 
-def _calculate_crc8(data: bytes) -> int:
-    """
-    SAE J1850 CRC-8 calculation. Same identical math used on the BCM.
-    Polynomial: 0x1D
-    Initial value: 0xFF
-    """
-    crc = 0xFF
-    for byte in data:
-        crc ^= byte
-        for _ in range(8):
-            if crc & 0x80:
-                crc = (crc << 1) ^ 0x1D
-            else:
-                crc <<= 1
-            crc &= 0xFF
-    return crc ^ 0xFF
 
 def init():
     """
@@ -80,7 +65,7 @@ def run(bus):
                         data_to_check = bytes(reversed_data[0:6])
                         
                         # 3. Calculate what the CRC *should* be
-                        expected_crc = _calculate_crc8(data_to_check)
+                        expected_crc = calculate_crc8(data_to_check)
                         
                         if received_crc != expected_crc:
                             logger.error(f"[E2E FAULT] CRC Mismatch! Expected: {hex(expected_crc)}, Got: {hex(received_crc)}. Discarding frame.")
