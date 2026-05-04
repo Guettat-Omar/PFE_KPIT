@@ -15,6 +15,7 @@ class LINMaster:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.wakeup_pin, GPIO.OUT)
         GPIO.output(self.wakeup_pin, GPIO.HIGH)
+        self._wakeup_slave()  # Ensure slave is awake before initializing serial
         
     def send_break(self):
       # Inter-frame gap — let bus settle and drain any stale bytes
@@ -54,7 +55,6 @@ class LINMaster:
         if len(data) > MAX_FRAME_DATA_LENGTH:
             raise ValueError(f"Data length exceeds maximum of {MAX_FRAME_DATA_LENGTH} bytes")
         
-        self._wakeup_slave()
         self.send_break()
         self.ser.write(bytes([SYNC_BYTE]))
         pid = self.calculate_pid(frame_id)
@@ -69,7 +69,6 @@ class LINMaster:
       if frame_id > 0x3F:
           raise ValueError("Frame ID must be 6 bits (0-63)")
       
-      self._wakeup_slave()
       self.send_break()  # send_break() already calls reset_input_buffer()
       
       self.ser.write(bytes([SYNC_BYTE]))
