@@ -49,11 +49,11 @@ class BcmGateway:
     
     def decode_wbp_frame(self, wbp_lin_data: bytes):
         state_to_cmd = {
-            0: 0,  # WINDOW_OFF       ? STOP
-            1: 2,  # WINDOW_DOWN      ? DOWN
-            2: 1,  # WINDOW_UP        ? UP
-            3: 1,  # WINDOW_UP_AUTO   ? UP
-            4: 2,  # WINDOW_DOWN_AUTO ? DOWN
+            0: 0,  # WINDOW_OFF       → cmd=STOP
+            1: 2,  # WINDOW_DOWN      → cmd=DOWN
+            2: 1,  # WINDOW_UP        → cmd=UP
+            3: 1,  # WINDOW_UP_AUTO   → cmd=UP
+            4: 2,  # WINDOW_DOWN_AUTO → cmd=DOWN
         }
         commands ={}
         for i in range(4):
