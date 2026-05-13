@@ -1,6 +1,6 @@
 #include "window_swich.h"
 
-windowState window_swich(int adc_value){
+windowState window_swich(uint16_t adc_value){
     if (adc_value <B_UP_AUTO)
     {
        return windowState::WINDOW_UP_AUTO;

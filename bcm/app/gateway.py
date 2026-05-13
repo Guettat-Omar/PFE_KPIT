@@ -36,8 +36,8 @@ class BcmGateway:
             0: 0,  # WINDOW_OFF       → cmd=STOP
             1: 2,  # WINDOW_DOWN      → cmd=DOWN
             2: 1,  # WINDOW_UP        → cmd=UP
-            3: 1,  # WINDOW_UP_AUTO   → cmd=UP
-            4: 2,  # WINDOW_DOWN_AUTO → cmd=DOWN
+            3: 3,  # WINDOW_UP_AUTO   → cmd=UP_AUTO
+            4: 4,  # WINDOW_DOWN_AUTO → cmd=DOWN_AUTO
         }
         commands ={}
         for i in range(4):

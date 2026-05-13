@@ -7,5 +7,6 @@ void motorWA_command(uint8_t command);
 void motorWB_command(uint8_t command);
 void motorPA_command(uint8_t command);
 void motorPB_command(uint8_t command);
+void update_all_motors();
 void stop_all_motors();
 #endif

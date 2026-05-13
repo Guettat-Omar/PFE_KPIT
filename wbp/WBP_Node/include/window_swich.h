@@ -10,11 +10,11 @@ enum class windowState {
     UNKNOWN
 };
 
-const uint16_t B_UP_AUTO  = 145;
-const uint16_t B_UP       = 245;
-const uint16_t B_DOWN_AUTO = 310;
-const uint16_t B_DOWN     = 402;
+const uint16_t B_UP_AUTO   = 282;
+const uint16_t B_UP        = 400;
+const uint16_t B_DOWN_AUTO = 452;
+const uint16_t B_DOWN      = 542;
 
 
-windowState window_swich(int adc_value);
+windowState window_swich(uint16_t adc_value);
 
