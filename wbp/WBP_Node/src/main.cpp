@@ -2,15 +2,17 @@
 #include "lin_slave.h"
 
 // ── External variables from lin_slave.cpp ────────────────────
-extern volatile uint8_t window_states[4];
+extern volatile uint8_t window_states[5]; // Increased to 5 bytes to hold Door/Child locks
 // ← ADD THESE TWO LINES at the top of main.cpp
 volatile bool break_received_flag = false;
 volatile bool response_sent_flag = false;
 
 // ── Pin definitions ──────────────────────────────────────────
-#define LED_BREAK 4    // RED    — BREAK received
-#define LED_SYNC 5     // YELLOW — SYNC received
-#define LED_RESPONSE 6 // GREEN  — response sent
+#define LED_BREAK 4         // RED    — BREAK received
+#define LED_SYNC 5          // YELLOW — SYNC received
+#define LED_RESPONSE 6      // GREEN  — response sent
+#define BTN_CHILD_SAFETY A4 // Child Safety Switch
+#define BTN_DOOR_LOCK A5    // Door Lock Switch
 
 // ── ADC pins ─────────────────────────────────────────────────
 const uint8_t ADC_PINS[4] = {A0, A1, A2, A3};
@@ -111,6 +113,8 @@ void setup()
     pinMode(LED_BREAK, OUTPUT);
     pinMode(LED_SYNC, OUTPUT);
     pinMode(LED_RESPONSE, OUTPUT);
+    pinMode(BTN_CHILD_SAFETY, INPUT_PULLUP);
+    pinMode(BTN_DOOR_LOCK, INPUT_PULLUP);
     reset_leds();
 
     startup_sequence();
@@ -128,7 +132,6 @@ void loop()
         last_sample_time = now;
 
         // Sample ADC and update window states
-        cli();
         for (int i = 0; i < 4; i++)
         {
             uint16_t adc_val;
@@ -144,17 +147,27 @@ void loop()
             }
 
             windowState new_state = window_swich(adc_val);
-            if (new_state == pending_state[i]) {
+            if (new_state == pending_state[i])
+            {
                 debounce_count[i]++;
-                if (debounce_count[i] >= DEBOUNCE_THRESHOLD) {
+                if (debounce_count[i] >= DEBOUNCE_THRESHOLD)
+                {
                     window_states[i] = static_cast<uint8_t>(new_state);
                 }
-            } else {
+            }
+            else
+            {
                 pending_state[i] = new_state;
                 debounce_count[i] = 1;
             }
         }
-        sei();
+
+        // Read switches (Assuming pressed = LOW because of INPUT_PULLUP)
+        bool child_lock_pressed = !digitalRead(BTN_CHILD_SAFETY);
+        bool door_lock_pressed = !digitalRead(BTN_DOOR_LOCK);
+
+        // Pack them into the 5th byte: Bit 1 for Child Lock, Bit 0 for Door Lock
+        window_states[4] = (child_lock_pressed << 1) | (door_lock_pressed << 0);
         // Update LEDs from ISR flags
         if (break_received_flag)
         {
