@@ -43,6 +43,14 @@ class BcmGateway:
         for i in range(4):
             window_state = wbp_lin_data[i] & 0x07
             commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 
+            
+        Door_Lock = (wbp_lin_data[4] & 0x01)
+        Child_Safety = (wbp_lin_data[4] & 0x02) >> 1
+        
+        commands.update({
+            "Door_Lock": Door_Lock,
+            "Child_Safety": Child_Safety
+        })
         return commands
 
     def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> tuple[bytes, bytes] | None:

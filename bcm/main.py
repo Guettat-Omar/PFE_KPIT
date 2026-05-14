@@ -85,7 +85,7 @@ def main():
 
     loop_counter = 0
     WBP_FRAME_ID = 0x12
-    WBP_PAYLOAD_LEN = 4
+    WBP_PAYLOAD_LEN = 5
 
     WBP_DIAG_FRAME_ID = 0x3E
     WBP_DIAG_LEN = 4

@@ -24,6 +24,8 @@ Signals {
     Window2_State:   8, 0, wbp, bcm ;
     Window3_State:   8, 0, wbp, bcm ;
     Window4_State:   8, 0, wbp, bcm ;
+    Child_Safety:    1, 0, wbp, bcm ;
+    Door_Lock:       1, 0, wbp, bcm ;
     WBP_NodeState:   8, 1, wbp, bcm ;
     WBP_AdcHealth:   8, 0, wbp, bcm ;
     WBP_Reserved0:   8, 0, wbp, bcm ;
@@ -44,11 +46,13 @@ Frames {
         Reverse_Btn,      9 ;   /* byte 1, bit 1 */
         Flash_Btn,       22 ;   /* byte 2, bit 6 */
     }
-    WBP_Frame : 0x12, wbp, 4 {
+    WBP_Frame : 0x12, wbp, 5 {
         Window1_State,  0 ;
         Window2_State,  8 ;
         Window3_State, 16 ;
         Window4_State, 24 ;
+        Child_Safety,  32 ;
+        Door_Lock,     33 ;
     }
     WBP_Diagnostic_Frame : 0x3E, wbp, 4 {
         WBP_NodeState, 0 ;
