@@ -1,0 +1,75 @@
+warning: in the working copy of 'bcm/app/gateway.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'bcm/drivers/lin_master.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'bcm/lin_protocol/master.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'wbp/WBP_Node/src/lin_slave.cpp', CRLF will be replaced by LF the next time Git touches it
+[1mdiff --git a/.claude/worktrees/elegant-morse b/.claude/worktrees/elegant-morse[m
+[1m--- a/.claude/worktrees/elegant-morse[m
+[1m+++ b/.claude/worktrees/elegant-morse[m
+[36m@@ -1 +1 @@[m
+[31m-Subproject commit 32e7049bfac3ced2b9055db5c1ae9be56a3ff03a[m
+[32m+[m[32mSubproject commit 32e7049bfac3ced2b9055db5c1ae9be56a3ff03a-dirty[m
+[1mdiff --git a/bcm/app/gateway.py b/bcm/app/gateway.py[m
+[1mindex 93ccdbc..ef0288b 100644[m
+[1m--- a/bcm/app/gateway.py[m
+[1m+++ b/bcm/app/gateway.py[m
+[36m@@ -57,7 +57,7 @@[m [mclass BcmGateway:[m
+         """[m
+         This runs every 30ms cycle.[m
+         """[m
+[31m-        if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 4:[m
+[32m+[m[32m        if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 5:[m
+           return None[m
+         # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout[m
+         # BUTTON_LEFT_TURN = (4, 5) -> byte 4, bit 5[m
+[1mdiff --git a/bcm/drivers/lin_master.py b/bcm/drivers/lin_master.py[m
+[1mindex 68d8bc1..44db536 100644[m
+[1m--- a/bcm/drivers/lin_master.py[m
+[1m+++ b/bcm/drivers/lin_master.py[m
+[36m@@ -24,7 +24,7 @@[m [mdef request_frame(frame_id: int, length: int) -> bytes | None:[m
+         logger.error(f"Timeout error for frame ID {hex(frame_id)}: {e}")[m
+         return None[m
+     except LINFrameError as e:[m
+[31m-        logger.debug(f"Frame error for frame {hex(frame_id)}: {e}")  # debug not error[m
+[32m+[m[32m        logger.error(f"Frame error for frame {hex(frame_id)}: {e}")  # DEBUG: changed to error[m
+         return None[m
+ [m
+ def send_frame(frame_id: int, data: bytes):[m
+[1mdiff --git a/bcm/lin_protocol/master.py b/bcm/lin_protocol/master.py[m
+[1mindex e8c0e8f..0ea6525 100644[m
+[1m--- a/bcm/lin_protocol/master.py[m
+[1m+++ b/bcm/lin_protocol/master.py[m
+[36m@@ -88,7 +88,10 @@[m [mclass LINMaster:[m
+       [m
+       # Read everything in buffer[m
+       all_bytes = bytearray(self.ser.read(self.ser.in_waiting))[m
+[31m-      [m
+[32m+[m
+[32m+[m[32m      # DEBUG: show raw bus bytes for every frame request[m
+[32m+[m[32m      print(f"[DBG] frame={hex(frame_id)} pid={hex(pid)} raw_bus={all_bytes.hex()} ({len(all_bytes)} bytes)", flush=True)[m
+[32m+[m
+       # Find PID byte in buffer — everything after it is the response[m
+       pid_byte = pid & 0xFF[m
+       pid_pos = -1[m
+[36m@@ -108,7 +111,8 @@[m [mclass LINMaster:[m
+           response_bytes += remaining[m
+       [m
+       if len(response_bytes) < expected_data_length + 1:[m
+[31m-          raise LINFrameError(f"Expected {expected_data_length} bytes, got {max(0, len(response_bytes) - 1)}")[m
+[32m+[m[32m          print(f"[DBG FAIL] pid_pos={pid_pos} all={len(all_bytes)} resp={len(response_bytes)} expected_data_len={expected_data_length}", flush=True)[m
+[32m+[m[32m          raise LINFrameError(f"Expected {expected_data_length + 1} bytes, got {len(response_bytes)}")[m
+       [m
+       data = bytes(response_bytes[:expected_data_length])[m
+       checksum = response_bytes[expected_data_length][m
+[1mdiff --git a/wbp/WBP_Node/src/lin_slave.cpp b/wbp/WBP_Node/src/lin_slave.cpp[m
+[1mindex 8059914..ba0929a 100644[m
+[1m--- a/wbp/WBP_Node/src/lin_slave.cpp[m
+[1m+++ b/wbp/WBP_Node/src/lin_slave.cpp[m
+[36m@@ -58,7 +58,7 @@[m [mISR(USART_RX_vect)[m
+             }[m
+             tx_buffer[5] = calculate_checksum(tx_buffer, pid, 5);[m
+             tx_index = 0;[m
+[31m-            tx_length = 6;[m
+[32m+[m[32m            tx_length = 5;[m
+             UCSR0B |= (1 << UDRIE0);[m
+         }[m
+         else if (received_byte == calculate_pid(WBP_DIAG_FRAME_ID))[m

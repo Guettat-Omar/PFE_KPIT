@@ -88,7 +88,10 @@ class LINMaster:
       
       # Read everything in buffer
       all_bytes = bytearray(self.ser.read(self.ser.in_waiting))
-      
+
+      # DEBUG: show raw bus bytes for every frame request
+      print(f"[DBG] frame={hex(frame_id)} pid={hex(pid)} raw_bus={all_bytes.hex()} ({len(all_bytes)} bytes)", flush=True)
+
       # Find PID byte in buffer — everything after it is the response
       pid_byte = pid & 0xFF
       pid_pos = -1
@@ -108,7 +111,8 @@ class LINMaster:
           response_bytes += remaining
       
       if len(response_bytes) < expected_data_length + 1:
-          raise LINFrameError(f"Expected {expected_data_length} bytes, got {max(0, len(response_bytes) - 1)}")
+          print(f"[DBG FAIL] pid_pos={pid_pos} all={len(all_bytes)} resp={len(response_bytes)} expected_data_len={expected_data_length}", flush=True)
+          raise LINFrameError(f"Expected {expected_data_length + 1} bytes, got {len(response_bytes)}")
       
       data = bytes(response_bytes[:expected_data_length])
       checksum = response_bytes[expected_data_length]

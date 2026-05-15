@@ -50,16 +50,25 @@ ISR(USART_RX_vect)
     case LINSlaveState::WAIT_PID:
         if (received_byte == calculate_pid(WBP_FRAME))
         {
-            // Send response immediately — no separate RESPOND state needed
-            uint8_t pid = calculate_pid(WBP_FRAME);
-            for (int i = 0; i < 5; i++)
+            // Event-triggered: only respond if window_states changed since last send
+            bool changed = false;
+            for (uint8_t i = 0; i < 5; i++)
             {
-                tx_buffer[i] = window_states[i];
+                if (window_states[i] != last_buffer[i]) { changed = true; break; }
             }
-            tx_buffer[5] = calculate_checksum(tx_buffer, pid, 5);
-            tx_index = 0;
-            tx_length = 6;
-            UCSR0B |= (1 << UDRIE0);
+            if (changed)
+            {
+                uint8_t pid = calculate_pid(WBP_FRAME);
+                for (uint8_t i = 0; i < 5; i++)
+                {
+                    tx_buffer[i] = window_states[i];
+                    last_buffer[i] = window_states[i];
+                }
+                tx_buffer[5] = calculate_checksum(tx_buffer, pid, 5);
+                tx_index = 0;
+                tx_length = 6;
+                UCSR0B |= (1 << UDRIE0);
+            }
         }
         else if (received_byte == calculate_pid(WBP_DIAG_FRAME_ID))
         {
