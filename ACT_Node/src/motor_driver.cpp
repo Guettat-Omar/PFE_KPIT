@@ -61,8 +61,8 @@ void motor_driver_init()
 
     motors[0] = {ENA_WA, IN1_WA, IN2_WA, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
     motors[1] = {ENB_WB, IN3_WB, IN4_WB, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
-    motors[2] = {ENA_PA, INP1_PA, INP2_PA, CMD_STOP, false, 0, CMD_STOP, 0, 0};
-    motors[3] = {ENB_PB, INP1_PB, INP2_PB, CMD_STOP, false, 0, CMD_STOP, 0, 0};
+    motors[2] = {ENA_PA, INP1_PA, INP2_PA, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
+    motors[3] = {ENB_PB, INP1_PB, INP2_PB, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
 }
 
 void process_motor_command(int m_id, uint8_t command)

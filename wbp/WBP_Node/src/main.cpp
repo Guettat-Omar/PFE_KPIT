@@ -20,6 +20,10 @@ windowState pending_state[4] = {windowState::WINDOW_OFF};
 uint8_t debounce_count[4] = {0};
 const uint8_t DEBOUNCE_THRESHOLD = 100; // Increased to 100ms to eliminate ANY button noise
 
+// ── Digital button debounce (door lock / child safety) ───────
+uint8_t btn_debounce_count[2] = {0};  // [0]=door_lock, [1]=child_safety
+bool btn_stable[2] = {false, false};
+
 // ── Timers ───────────────────────────────────────────────────
 unsigned long last_sample_time = 0;
 
@@ -125,6 +129,13 @@ void setup()
 // ── Loop ─────────────────────────────────────────────────────
 void loop()
 {
+    // ADC takes ~200ms to settle after power-on; skip sampling for 1 second
+    // to prevent startup noise from being latched into window_states and
+    // triggering spurious LIN responses that drive motors without user input.
+    static unsigned long ready_at = millis() + 1000;
+    if (millis() < ready_at)
+        return;
+
     unsigned long now = millis();
 
     if (now - last_sample_time >= 1)
@@ -162,12 +173,31 @@ void loop()
             }
         }
 
-        // Read switches (Assuming pressed = LOW because of INPUT_PULLUP)
-        bool child_lock_pressed = !digitalRead(BTN_CHILD_SAFETY);
-        bool door_lock_pressed = !digitalRead(BTN_DOOR_LOCK);
+        // Debounced digital button reads (same 100ms threshold as ADC buttons)
+        bool raw_door  = !digitalRead(BTN_DOOR_LOCK);
+        bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
+
+        if (raw_door == btn_stable[0]) {
+            btn_debounce_count[0] = 0;
+        } else {
+            btn_debounce_count[0]++;
+            if (btn_debounce_count[0] >= DEBOUNCE_THRESHOLD) {
+                btn_stable[0] = raw_door;
+                btn_debounce_count[0] = 0;
+            }
+        }
+        if (raw_child == btn_stable[1]) {
+            btn_debounce_count[1] = 0;
+        } else {
+            btn_debounce_count[1]++;
+            if (btn_debounce_count[1] >= DEBOUNCE_THRESHOLD) {
+                btn_stable[1] = raw_child;
+                btn_debounce_count[1] = 0;
+            }
+        }
 
         // Pack them into the 5th byte: Bit 1 for Child Lock, Bit 0 for Door Lock
-        window_states[4] = (child_lock_pressed << 1) | (door_lock_pressed << 0);
+        window_states[4] = (btn_stable[1] << 1) | (btn_stable[0] << 0);
         // Update LEDs from ISR flags
         if (break_received_flag)
         {

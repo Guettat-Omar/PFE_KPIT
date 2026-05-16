@@ -20,6 +20,6 @@ class FlashTimer:
         # If enough time has passed (e.g., 0.5 seconds), flip the state
         if (current_time - self.last_toggle_time) >= self.period_secs:
             self.flash_state = not self.flash_state
-            self.last_toggle_time = current_time
+            self.last_toggle_time += self.period_secs
             
         return self.flash_state

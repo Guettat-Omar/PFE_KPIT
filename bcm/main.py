@@ -93,10 +93,7 @@ def main():
     while True:
       try:
           loop_counter += 1
-  
-          # Step A: Heartbeat
-          is_flashing = flash_timer.update()
-  
+
           # Step B: Read LIN
           lsn_payload = None
           wbp_payload = None
@@ -117,6 +114,7 @@ def main():
   
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
+                  is_flashing = flash_timer.update()  # sample flash state just before encoding
                   result = gw.process_and_send(
                       lsn_payload, wbp_payload, is_flashing
                   )

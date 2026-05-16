@@ -20,6 +20,10 @@ class BcmGateway:
         # Initialize E2E sequence counter
         self.seq_counter = 0
 
+        # Door lock toggle state (momentary button → latched lock)
+        self._door_lock_prev = False
+        self._door_locked = False
+
         # 2. Load the DBC Database
         try:
             self.db = cantools.database.load_file(DBC_path)
@@ -44,11 +48,15 @@ class BcmGateway:
             window_state = wbp_lin_data[i] & 0x07
             commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 
             
-        Door_Lock = (wbp_lin_data[4] & 0x01)
+        raw_door_lock = bool(wbp_lin_data[4] & 0x01)
+        if raw_door_lock and not self._door_lock_prev:  # Rising edge: button just pressed
+            self._door_locked = not self._door_locked
+        self._door_lock_prev = raw_door_lock
+
         Child_Safety = (wbp_lin_data[4] & 0x02) >> 1
-        
+
         commands.update({
-            "Door_Lock": Door_Lock,
+            "Door_Lock": int(self._door_locked),
             "Child_Safety": Child_Safety
         })
         return commands

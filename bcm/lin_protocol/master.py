@@ -79,7 +79,7 @@ class LINMaster:
       # Wait until buffer has enough bytes or timeout
       # Expected: up to 3 echo bytes + data + checksum
       expected_total = 3 + expected_data_length + 1
-      deadline = time.monotonic() + 0.030  # 30ms timeout
+      deadline = time.monotonic() + 0.015  # 15ms timeout — enough for ~2ms real response, halves silent-poll penalty
       
       while time.monotonic() < deadline:
           if self.ser.in_waiting >= expected_total:
@@ -89,8 +89,6 @@ class LINMaster:
       # Read everything in buffer
       all_bytes = bytearray(self.ser.read(self.ser.in_waiting))
 
-      # DEBUG: show raw bus bytes for every frame request
-      print(f"[DBG] frame={hex(frame_id)} pid={hex(pid)} raw_bus={all_bytes.hex()} ({len(all_bytes)} bytes)", flush=True)
 
       # Find PID byte in buffer — everything after it is the response
       pid_byte = pid & 0xFF
@@ -111,7 +109,6 @@ class LINMaster:
           response_bytes += remaining
       
       if len(response_bytes) < expected_data_length + 1:
-          print(f"[DBG FAIL] pid_pos={pid_pos} all={len(all_bytes)} resp={len(response_bytes)} expected_data_len={expected_data_length}", flush=True)
           raise LINFrameError(f"Expected {expected_data_length + 1} bytes, got {len(response_bytes)}")
       
       data = bytes(response_bytes[:expected_data_length])
