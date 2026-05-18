@@ -15,6 +15,7 @@ class LINMaster:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.wakeup_pin, GPIO.OUT)
         GPIO.output(self.wakeup_pin, GPIO.HIGH)
+        time.sleep(0.010)
         self._wakeup_slave()  # Ensure slave is awake before initializing serial
         
     def send_break(self):

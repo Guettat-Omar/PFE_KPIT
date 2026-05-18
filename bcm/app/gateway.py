@@ -44,6 +44,8 @@ class BcmGateway:
             4: 4,  # WINDOW_DOWN_AUTO → cmd=DOWN_AUTO
         }
         commands ={}
+        if len(wbp_lin_data) < 5:
+            return None
         for i in range(4):
             window_state = wbp_lin_data[i] & 0x07
             commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 

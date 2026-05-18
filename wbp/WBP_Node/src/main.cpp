@@ -119,6 +119,7 @@ void setup()
     pinMode(LED_RESPONSE, OUTPUT);
     pinMode(BTN_CHILD_SAFETY, INPUT_PULLUP);
     pinMode(BTN_DOOR_LOCK, INPUT_PULLUP);
+    pinMode(13, OUTPUT);
     reset_leds();
 
     startup_sequence();
@@ -220,6 +221,5 @@ void loop()
         if (window_states[i] != 0)
             any_active = true;
     }
-    pinMode(13, OUTPUT);
     digitalWrite(13, any_active ? HIGH : LOW);
 }
