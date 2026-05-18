@@ -90,6 +90,7 @@ def main():
     WBP_DIAG_FRAME_ID = 0x3E
     WBP_DIAG_LEN = 4
 
+    wbp_was_healthy = True
     while True:
       try:
           loop_counter += 1
@@ -97,7 +98,8 @@ def main():
           # Step B: Read LIN
           lsn_payload = None
           wbp_payload = None
-  
+
+          is_flashing = flash_timer.update()  # sample flash state just before encoding
           if HARDWARE_AVAILABLE:
               lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
               raw_wbp = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
@@ -109,12 +111,13 @@ def main():
                   logger.warning("[LSN] No response this cycle.")
                   lsn_payload = b'\x00\x00\x00\x00\x00\x00'
   
-              if not wbp_monitor.is_healthy:
+              if not wbp_monitor.is_healthy and wbp_was_healthy:
                 logger.warning("[WBP] Node fault — no response for too long.")
+                
+              wbp_was_healthy = wbp_monitor.is_healthy
   
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
-                  is_flashing = flash_timer.update()  # sample flash state just before encoding
                   result = gw.process_and_send(
                       lsn_payload, wbp_payload, is_flashing
                   )
