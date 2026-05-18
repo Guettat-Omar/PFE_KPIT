@@ -1,4 +1,4 @@
-#include "window_swich.h"
+#include "window_switch.h"
 #include "lin_slave.h"
 
 // ── External variables from lin_slave.cpp ────────────────────
@@ -21,7 +21,7 @@ uint8_t debounce_count[4] = {0};
 const uint8_t DEBOUNCE_THRESHOLD = 100; // Increased to 100ms to eliminate ANY button noise
 
 // ── Digital button debounce (door lock / child safety) ───────
-uint8_t btn_debounce_count[2] = {0};  // [0]=door_lock, [1]=child_safety
+uint8_t btn_debounce_count[2] = {0}; // [0]=door_lock, [1]=child_safety
 bool btn_stable[2] = {false, false};
 
 // ── Timers ───────────────────────────────────────────────────
@@ -158,7 +158,7 @@ void loop()
                 adc_val = 1023; // Force unconnected pins to read as 5V (WINDOW_OFF)
             }
 
-            windowState new_state = window_swich(adc_val);
+            windowState new_state = window_switch(adc_val);
             if (new_state == pending_state[i])
             {
                 debounce_count[i]++;
@@ -175,23 +175,31 @@ void loop()
         }
 
         // Debounced digital button reads (same 100ms threshold as ADC buttons)
-        bool raw_door  = !digitalRead(BTN_DOOR_LOCK);
+        bool raw_door = !digitalRead(BTN_DOOR_LOCK);
         bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
 
-        if (raw_door == btn_stable[0]) {
+        if (raw_door == btn_stable[0])
+        {
             btn_debounce_count[0] = 0;
-        } else {
+        }
+        else
+        {
             btn_debounce_count[0]++;
-            if (btn_debounce_count[0] >= DEBOUNCE_THRESHOLD) {
+            if (btn_debounce_count[0] >= DEBOUNCE_THRESHOLD)
+            {
                 btn_stable[0] = raw_door;
                 btn_debounce_count[0] = 0;
             }
         }
-        if (raw_child == btn_stable[1]) {
+        if (raw_child == btn_stable[1])
+        {
             btn_debounce_count[1] = 0;
-        } else {
+        }
+        else
+        {
             btn_debounce_count[1]++;
-            if (btn_debounce_count[1] >= DEBOUNCE_THRESHOLD) {
+            if (btn_debounce_count[1] >= DEBOUNCE_THRESHOLD)
+            {
                 btn_stable[1] = raw_child;
                 btn_debounce_count[1] = 0;
             }

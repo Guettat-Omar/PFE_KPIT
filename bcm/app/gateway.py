@@ -3,8 +3,7 @@ from bcm.app.brake_sm import BrakeSignalSM
 from bcm.app.reverse_sm import ReverseSignalSM
 import cantools
 from bcm.app.turn_signal_sm import TurnSignalSM
-from bcm.app.headlight_sm import headlightSM
-from bcm.config import LDF_path, DBC_path
+from bcm.app.headlight_sm import HeadlightSM
 from bcm.utils.crc import calculate_crc8 
 
 logger = logging.getLogger(__name__)
@@ -13,7 +12,7 @@ class BcmGateway:
     def __init__(self, DBC_path: str):
         # 1. Initialize the State Machines (The Brains)
         self.turn_sm = TurnSignalSM()
-        self.headlight_sm = headlightSM()
+        self.headlight_sm = HeadlightSM()
         self.brake_sm = BrakeSignalSM()
         self.reverse_sm = ReverseSignalSM()
         

@@ -5,12 +5,12 @@ import os
 # Ensure the app module can be found
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'app')))
 
-from headlight_sm import headlightSM
+from headlight_sm import HeadlightSM
 
 class TestHeadlightStateMachine(unittest.TestCase):
     def setUp(self):
         """Creates a fresh instance of the State Machine before every test."""
-        self.sm = headlightSM()
+        self.sm = HeadlightSM()
 
     def test_req_park_001_and_002(self):
         """Test Parking Lights Logic: Should turn ON when parking is True OR low_beam is True."""

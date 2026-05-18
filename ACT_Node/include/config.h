@@ -14,7 +14,7 @@ const int SPI_CS_PIN = 8;
 
 // Window Motor A — L298N #1 Motor A
 const int IN1_WA  = 2;
-const int IN2_WA  = A0; // Changed from 4 to A0 to fix damaged hardware pin!
+const int IN2_WA  = A0; 
 const int ENA_WA  = 3;   // PWM
 
 // Window Motor B — L298N #1 Motor B

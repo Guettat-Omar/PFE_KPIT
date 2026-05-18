@@ -2,7 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class headlightSM:
+class HeadlightSM:
     def __init__(self):
         # Independent Boolean Flags (No Enum!)
         # This allows multiple lights to be ON simultaneously (additive lighting)
