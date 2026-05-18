@@ -124,7 +124,7 @@ class BcmGateway:
 
         # Step 4: Combine into the exact DBC mappings based on the new LED hardware table!
         combined_signals = {
-            "Led_B0_0": 0, "Led_B0_3": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
+            "Led_B0_0": 0,"Led_B0_1": 0, "Led_B0_3": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
             "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0, "Led_B1_4": 0, "Led_B1_7": 0,
             "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_7": 0,
             "Led_B3_1": 0, "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
@@ -175,6 +175,8 @@ class BcmGateway:
             combined_signals["Led_B0_5"] = 1
             combined_signals["Led_B1_0"] = 1
             combined_signals["Led_B2_0"] = 1
+            combined_signals["Led_B0_1"] = 1
+            
 
         # --- Brake & Reverse Logic ---
         if brake_signals.get("BrakeLed") == 1:

@@ -36,6 +36,7 @@ BU_: BCM LSN WBP ACT
 
 BO_ 258 LIGHT_CMD: 7 BCM
  SG_ Led_B0_0 : 0|1@1+ (1,0) [0|1] "" LSN
+ SG_ Led_B0_1 : 1|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B0_3 : 3|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B0_5 : 5|1@1+ (1,0) [0|1] "" LSN
  SG_ Led_B0_6 : 6|1@1+ (1,0) [0|1] "" LSN
