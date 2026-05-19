@@ -10,6 +10,7 @@ from bcm.config import DBC_path, CAN_CHANNEL
 from bcm.app.gateway import BcmGateway
 from bcm.app.flash_timer import FlashTimer
 from bcm.app.wbp_monitor import WBPMonitor
+from bcm.app.someip_publisher import SomeIPPublisher
 import logging.handlers
 
 # Mock imports for hardware drivers. 
@@ -69,6 +70,9 @@ def main():
         logger.critical("Cannot start BCM without an active CAN Database.")
         return
 
+    # Initialize SOME/IP Publisher
+    publisher = SomeIPPublisher()
+
     # Create the 1Hz Heartbeat Timer (500ms ON / 500ms OFF)
     flash_timer = FlashTimer(period_ms=500)
 
@@ -112,20 +116,18 @@ def main():
                   lsn_payload = b'\x00\x00\x00\x00\x00\x00'
   
               if not wbp_monitor.is_healthy and wbp_was_healthy:
-                logger.warning("[WBP] Node fault — no response for too long.")
+                logger.warning("[WBP] Node fault  no response for too long.")
                 
               wbp_was_healthy = wbp_monitor.is_healthy
   
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
-                  result = gw.process_and_send(
+                  can_payload, window_payload, vehicle_state = gw.process_and_send(
                       lsn_payload, wbp_payload, is_flashing
                   )
-                  if result is None:
+                  if can_payload is None:
                       logger.warning("[GW] process_and_send returned None, skipping CAN send.")
                       continue
-                  can_payload = result[0]
-                  window_payload = result[1]
                   print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
                   if can_payload:
                       can_id = gw.light_cmd_msg.frame_id
@@ -135,6 +137,16 @@ def main():
                       window_id = gw.window_cmd_msg.frame_id
                       send(window_id, list(window_payload))
                       print(f"[WINDOW] Sent {window_payload.hex()}", flush=True)
+                      
+                  # Publish SOME/IP state
+                  if vehicle_state:
+                      # Add node health state to vehicle_state
+                      vehicle_state["nodes"] = {
+                          "bcm": "ONLINE",
+                          "lsn": "ONLINE" if lsn_valid else "FAULT",
+                          "wbp": "ONLINE" if wbp_monitor.is_healthy else "FAULT"
+                      }
+                      publisher.publish(vehicle_state)
               else:
                   logger.warning("[GW] process_and_send returned None, skipping CAN send.")
         

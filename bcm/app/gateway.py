@@ -62,12 +62,12 @@ class BcmGateway:
         })
         return commands
 
-    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> tuple[bytes, bytes] | None:
+    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> tuple[bytes, bytes, dict] | tuple[None, None, None]:
         """
         This runs every 30ms cycle.
         """
         if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 5:
-          return None
+          return None, None, None
         # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout
         # BUTTON_LEFT_TURN = (4, 5) -> byte 4, bit 5
         # BUTTON_RIGHT_TURN = (4, 4) -> byte 4, bit 4
@@ -212,7 +212,35 @@ class BcmGateway:
             can_payload = can_payload[::-1]
             
             logger.debug(f"Encoded CAN Payload with CRC: {can_payload.hex()}")
-            return bytes(can_payload), bytes(window_can_payload)
+            
+            vehicle_state = {
+                "lights": {
+                    "low_beam": headlight_signals.get("LowBeamLed", 0),
+                    "high_beam": headlight_signals.get("HighBeamLed", 0),
+                    "parking": headlight_signals.get("ParkingLed", 0),
+                    "front_fog": headlight_signals.get("FrontFogLed", 0),
+                    "rear_fog": headlight_signals.get("RearFogLed", 0),
+                    "brake": brake_signals.get("BrakeLed", 0),
+                    "reverse": reverse_signals.get("ReverseLed", 0)
+                },
+                "turn": {
+                    "left": turn_signals.get("LeftTurnLed", 0),
+                    "right": turn_signals.get("RightTurnLed", 0),
+                    "hazard": int(hazard_btn)
+                },
+                "windows": {
+                    "w1": window_commands.get("Window_1", 0),
+                    "w2": window_commands.get("Window_2", 0),
+                    "w3": window_commands.get("Window_3", 0),
+                    "w4": window_commands.get("Window_4", 0)
+                },
+                "doors": {
+                    "locked": window_commands.get("Door_Lock", 0),
+                    "child_safety": window_commands.get("Child_Safety", 0)
+                }
+            }
+            
+            return bytes(can_payload), bytes(window_can_payload), vehicle_state
         except Exception as e:
             logger.error(f"Failed to encode CAN message: {e}")
-            return None
+            return None, None, None
