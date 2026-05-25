@@ -49,6 +49,16 @@ body::after{
   font-size:14px;font-weight:700;letter-spacing:3px;color:var(--text-mid);
   text-transform:uppercase;
 }
+#pwf-indicator {
+  display: flex; gap: 8px; justify-content: center; align-items: center;
+}
+.pwf-pill {
+  padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 14px; letter-spacing: 2px;
+  border: 1px solid var(--border); color: var(--text-dim); transition: all 0.3s ease;
+}
+.pwf-pill.active {
+  border-color: currentColor; box-shadow: 0 0 10px currentColor; color: var(--text-bright);
+}
 #clock{
   font-size:26px;font-weight:700;color:var(--blue);letter-spacing:4px;
   text-shadow:0 0 20px rgba(0,212,255,0.5);
@@ -204,6 +214,13 @@ body::after{
 <!-- TOP BAR -->
 <div id="top-bar">
   <div id="platform-name">Automotive Didactic Platform</div>
+  
+  <div id="pwf-indicator">
+    <div class="pwf-pill" id="pwf-p" style="color: #6a6a9a;">P</div>
+    <div class="pwf-pill" id="pwf-w" style="color: #ff8c00;">W</div>
+    <div class="pwf-pill" id="pwf-f" style="color: #00e676;">F</div>
+  </div>
+
   <div id="clock">--:--:--</div>
   <div id="bcm-status">
     <div class="pulse-dot" id="bcm-top-dot"></div>
@@ -494,6 +511,17 @@ var WIN_DIRS=['STOP','UP','DOWN'];
 // ---- MAIN UPDATE ----
 function updateDashboard(state){
   try{
+    // PWF STATE
+    if (state.pwf_state !== undefined) {
+      document.getElementById('pwf-p').classList.remove('active');
+      document.getElementById('pwf-w').classList.remove('active');
+      document.getElementById('pwf-f').classList.remove('active');
+      
+      if (state.pwf_state === 0) document.getElementById('pwf-p').classList.add('active');
+      if (state.pwf_state === 1) document.getElementById('pwf-w').classList.add('active');
+      if (state.pwf_state === 2) document.getElementById('pwf-f').classList.add('active');
+    }
+
     // LIGHTS
     var lights=state.lights||{};
     var lightDefs={

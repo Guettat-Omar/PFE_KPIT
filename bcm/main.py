@@ -11,6 +11,7 @@ from bcm.app.gateway import BcmGateway
 from bcm.app.flash_timer import FlashTimer
 from bcm.app.wbp_monitor import WBPMonitor
 from bcm.app.someip_publisher import SomeIPPublisher
+from bcm.app.pwf_sm import PWFStateSM
 import logging.handlers
 
 # Mock imports for hardware drivers. 
@@ -70,6 +71,9 @@ def main():
         logger.critical("Cannot start BCM without an active CAN Database.")
         return
 
+    # Initialize PWF state machine
+    pwf_sm = PWFStateSM()
+
     # Initialize SOME/IP Publisher
     publisher = SomeIPPublisher()
 
@@ -123,7 +127,7 @@ def main():
               # Step C: Process + Send CAN (only if LSN responded)
               if lsn_valid:
                   can_payload, window_payload, vehicle_state = gw.process_and_send(
-                      lsn_payload, wbp_payload, is_flashing
+                      lsn_payload, wbp_payload, is_flashing, pwf_sm.get_state()
                   )
                   if can_payload is None:
                       logger.warning("[GW] process_and_send returned None, skipping CAN send.")
@@ -140,6 +144,13 @@ def main():
                       
                   # Publish SOME/IP state
                   if vehicle_state:
+                      # Update PWF state machine and add current state back into dashboard data
+                      pwf_request = vehicle_state.pop("pwf_request")
+                      current_pwf = pwf_sm.update(pwf_request)
+                      vehicle_state["pwf_state"] = current_pwf
+                      
+                      logger.info(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
+                      
                       # Add node health state to vehicle_state
                       vehicle_state["nodes"] = {
                           "bcm": "ONLINE",

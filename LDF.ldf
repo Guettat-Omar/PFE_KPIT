@@ -20,6 +20,8 @@ Signals {
     Front_Fog_Btn:   1, 0, lsn, bcm ;
     Rear_Fog_Btn:    1, 0, lsn, bcm ;
     Flash_Btn:       1, 0, lsn, bcm ;
+    PWF_Bit0: 1, 0, lsn, bcm ;
+    PWF_Bit1: 1, 0, lsn, bcm ;
     Window1_State:   8, 0, wbp, bcm ;
     Window2_State:   8, 0, wbp, bcm ;
     Window3_State:   8, 0, wbp, bcm ;
@@ -45,6 +47,8 @@ Frames {
         Brake_Btn,       14 ;   /* byte 1, bit 6 */
         Reverse_Btn,      9 ;   /* byte 1, bit 1 */
         Flash_Btn,       22 ;   /* byte 2, bit 6 */
+        PWF_Bit0, 36 ;  /* byte 4, bit 4 - PWF state bit 0 */
+        PWF_Bit1, 37 ;  /* byte 4, bit 5 - PWF state bit 1 */
     }
     WBP_Frame : 0x12, wbp, 5 {
         Window1_State,  0 ;

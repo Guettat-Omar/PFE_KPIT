@@ -62,7 +62,7 @@ class BcmGateway:
         })
         return commands
 
-    def process_and_send(self, lsn_lin_data: bytes,wbp_lin_data: bytes, flash_state: bool) -> tuple[bytes, bytes, dict] | tuple[None, None, None]:
+    def process_and_send(self, lsn_lin_data: bytes, wbp_lin_data: bytes, flash_state: bool, pwf_state: int) -> tuple[bytes, bytes, dict] | tuple[None, None, None]:
         """
         This runs every 30ms cycle.
         """
@@ -99,7 +99,30 @@ class BcmGateway:
         
         # Position light is 000050000000 -> Byte 2 is 0x50 (Idle 0x40 + Switch 0x10) -> 0x10 is Bit 4
         parking_sw   = bool((lsn_lin_data[2] >> 4) & 1)
+
+        pwf_bit0 = (lsn_lin_data[4] >> 4) & 0x01
+        pwf_bit1 = (lsn_lin_data[4] >> 5) & 0x01
+        pwf_raw = (pwf_bit1 << 1) | pwf_bit0
         
+        # --- PWF Gating Logic ---
+        # pwf_state: 0=PARKEN, 1=WOHNEN, 2=FAHREN
+
+        # 1. FAHREN only features
+        if pwf_state != 2:
+            low_beam_sw = False
+            high_beam_sw = False
+            front_fog_sw = False
+            rear_fog_sw = False
+            brake_sw = False
+            reverse_sw = False
+            left_btn = False
+            right_btn = False
+            ftp_btn = False
+        
+        # 2. WOHNEN and FAHREN features
+        if pwf_state < 1:  # If we are in PARKEN (0)
+            parking_sw = False
+
         # Step 1b: Debug — log raw parsed inputs so bit-mapping bugs are visible
         logger.debug(
             f"[GW] LIN raw: {lsn_lin_data.hex()} | "
@@ -108,6 +131,14 @@ class BcmGateway:
             f"brake={brake_sw} rev={reverse_sw}"
         )
         window_commands = self.decode_wbp_frame(wbp_lin_data)
+        
+        # Gate Windows based on PWF state (WOHNEN and FAHREN only)
+        if pwf_state < 1:  # PARKEN (0)
+            window_commands["Window_1"] = 0
+            window_commands["Window_2"] = 0
+            window_commands["Window_3"] = 0
+            window_commands["Window_4"] = 0
+
         logger.info(f"[WBP] Window commands: {window_commands}")
 
 
@@ -214,6 +245,7 @@ class BcmGateway:
             logger.debug(f"Encoded CAN Payload with CRC: {can_payload.hex()}")
             
             vehicle_state = {
+                "pwf_request": pwf_raw,  
                 "lights": {
                     "low_beam": headlight_signals.get("LowBeamLed", 0),
                     "high_beam": headlight_signals.get("HighBeamLed", 0),
