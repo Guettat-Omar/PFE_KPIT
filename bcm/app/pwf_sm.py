@@ -17,7 +17,8 @@ class PWFStateSM:
         try:
             req_state = PWFState(requested_state_raw)
         except ValueError:
-            return self.current_state.value  # Ignore invalid numbers
+            self.current_state = PWFState.PARKEN
+            return self.current_state.value  # Safe fallback 
 
         # If it's already in the requested state, do nothing
         if self.current_state == req_state:
