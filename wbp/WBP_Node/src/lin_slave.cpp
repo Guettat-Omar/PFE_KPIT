@@ -52,9 +52,16 @@ ISR(USART_RX_vect)
         {
             // Event-triggered: only respond if window_states changed since last send
             bool changed = false;
+            static uint8_t force_sync_counter = 0;
             for (uint8_t i = 0; i < 5; i++)
             {
                 if (window_states[i] != last_buffer[i]) { changed = true; break; }
+            }
+            force_sync_counter++;
+            if (force_sync_counter >= 10) 
+            {
+                changed = true; // Force it to send anyway!
+                force_sync_counter = 0;
             }
             if (changed)
             {

@@ -25,7 +25,7 @@ def request_frame(frame_id: int, length: int) -> bytes | None:
         return None
     except LINFrameError as e:
         logger.debug(f"No LIN event for frame {hex(frame_id)} (slave silent or no change)")
-        return None
+        return b''
 
 def send_frame(frame_id: int, data: bytes):
     try:

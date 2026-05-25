@@ -17,7 +17,7 @@ class WBPMonitor:
         self.counter = 0
         self.is_healthy = True
 
-        if raw_response != self.last_payload:
+        if raw_response != b'' and raw_response != self.last_payload:
             logger.info(f"[WBP] New payload: {raw_response.hex()}")
             self.last_payload = raw_response
         return self.last_payload
