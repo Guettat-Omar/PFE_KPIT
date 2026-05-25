@@ -10,7 +10,7 @@ NODE: LSN Node | Raspberry Pi 4B
 import time
 import can 
 import logging
-import subprocess
+from hal.can_hal import reset_can_interface
 from drivers.hc595_driver import *
 from config import CAN_frame_id, CAN_frame_id_response,NodeState
 import config
@@ -136,17 +136,8 @@ def run(bus):
                 logger.error(f"[CAN] Failed to shutdown old socket: {e}")
                 pass
             
-            # Step 1: Execute ip link commands directly (removes the need for can_init.sh to exist at all!)
-            subprocess.run(["sudo", "ip", "link", "set", "can0", "down"], capture_output=True)
-            subprocess.run(["sudo", "ip", "link", "set", "can0", "type", "can", "bitrate", "500000"], capture_output=True)
-            result = subprocess.run(["sudo", "ip", "link", "set", "up", "can0"], capture_output=True, text=True)
-            
-            logger.info("[CAN] Self-healing ip commands executed.")
-            if result.stderr:
-                logger.error(f"[CAN] Self-healing ip errors: {result.stderr.strip()}")
-            
-            # Give the OS 1 second to actually turn the hardware on before Python tries to bind to it!
-            time.sleep(1)
+            # Step 1: Recover hardware via HAL
+            reset_can_interface()
             
             # Step 2: Re-initialize the Python socket object because the old connection is dead
             try:

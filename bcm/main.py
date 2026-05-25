@@ -12,6 +12,7 @@ from bcm.app.flash_timer import FlashTimer
 from bcm.app.wbp_monitor import WBPMonitor
 from bcm.app.someip_publisher import SomeIPPublisher
 from bcm.app.pwf_sm import PWFStateSM
+from bcm.utils.systemd_watchdog import SystemdNotifier
 import logging.handlers
 
 # Mock imports for hardware drivers. 
@@ -47,6 +48,7 @@ def main():
     logger.info("Starting Body Control Module (BCM)...")
     bus = None
     wbp_monitor = WBPMonitor()
+    systemd = SystemdNotifier()
 
     # 1. Initialize Communication Buses
     if HARDWARE_AVAILABLE:
@@ -60,6 +62,7 @@ def main():
     
     def handle_sigterm(signum, frame):
             logger.warning(f"Received Linux signal {signum}. Shutting down safely...")
+            systemd.stopping()
             bus.shutdown()
             close_lin_master()
             logger.info("--- BCM Node Shutdown Sequence Complete ---")
@@ -99,8 +102,15 @@ def main():
     WBP_DIAG_LEN = 4
 
     wbp_was_healthy = True
+    
+    # Notify systemd that initialization is complete
+    systemd.ready()
+
     while True:
-      try:
+        try:
+            # Pet the watchdog each cycle (every 30ms)
+            systemd.pet_watchdog()
+            
           loop_counter += 1
 
           # Step B: Read LIN

@@ -4,7 +4,8 @@ from bcm.app.reverse_sm import ReverseSignalSM
 import cantools
 from bcm.app.turn_signal_sm import TurnSignalSM
 from bcm.app.headlight_sm import HeadlightSM
-from bcm.utils.crc import calculate_crc8 
+from bcm.utils.crc import calculate_crc8
+from bcm.utils.mapping_config import get_button_state,LIGHT_BUTTONS,LIGHT_LEDS
 
 logger = logging.getLogger(__name__)
 
@@ -68,40 +69,20 @@ class BcmGateway:
         """
         if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 5:
           return None, None, None
-        # Step 1: Parse the raw LIN bytes into Booleans EXACTLY matching the 74HC165 layout
-        # BUTTON_LEFT_TURN = (4, 5) -> byte 4, bit 5
-        # BUTTON_RIGHT_TURN = (4, 4) -> byte 4, bit 4
-        # BUTTON_HAZARD = (3, 0) -> byte 3, bit 0
-        # BUTTON_LOW_BEAM = (3, 2) -> byte 3, bit 2
-        # BUTTON_HIGH_BEAM = (3, 1) -> byte 3, bit 1
-        # BUTTON_BRAKE = (3, 5) -> byte 3, bit 5
-        # BUTTON_REVERSE = (3, 4) -> byte 3, bit 4
-        # BUTTON_FOG = (4, 3) -> byte 4, bit 3
-        # BUTTON_FLASH = (4, 2) -> byte 4, bit 2
-        # Note in Python, we shift the bit right and check if it's 1
-        
-        # Left Turn = Byte 3, Bit 6 (0x40)
-        left_btn     = bool((lsn_lin_data[3] >> 6) & 1)
-        # Right Turn = Byte 3, Bit 5 (0x20)
-        right_btn    = bool((lsn_lin_data[3] >> 5) & 1)
-        
-        hazard_btn   = bool((lsn_lin_data[4] >> 3) & 1) # Double check this is correct on your board
-        low_beam_sw  = bool((lsn_lin_data[2] >> 3) & 1) # byte 2, bit 3
-        ftp_not_pressed = bool((lsn_lin_data[2] >> 6) & 1)  # normally closed = 1 when not pressed
-        ftp_btn = not ftp_not_pressed                          # inverted: True when pressed
-        high_beam_sw = bool((lsn_lin_data[2] >> 2) & 1) and ftp_not_pressed   # byte 4, bit 2 (momentary, raw)
-        
-        brake_sw     = bool((lsn_lin_data[1] >> 6) & 1) # Used to be byte 3 bit 5, moved it away to let rear fog use it
-        reverse_sw   = bool((lsn_lin_data[1] >> 1) & 1)
-        
-        front_fog_sw = bool((lsn_lin_data[3] >> 7) & 1)   # fog ring engaged
-        rear_fog_sw  = bool((lsn_lin_data[2] >> 0) & 1)
-        
-        # Position light is 000050000000 -> Byte 2 is 0x50 (Idle 0x40 + Switch 0x10) -> 0x10 is Bit 4
-        parking_sw   = bool((lsn_lin_data[2] >> 4) & 1)
-
-        pwf_bit0 = (lsn_lin_data[4] >> 4) & 0x01
-        pwf_bit1 = (lsn_lin_data[4] >> 5) & 0x01
+        left_btn     = get_button_state(lsn_lin_data,"left_btn")
+        right_btn    = get_button_state(lsn_lin_data,"right_btn")
+        hazard_btn   = get_button_state(lsn_lin_data,"hazard_btn")
+        low_beam_sw  = get_button_state(lsn_lin_data,"low_beam_sw")
+        ftp_not_pressed = get_button_state(lsn_lin_data,"ftp_not_pressed")
+        ftp_btn = not ftp_not_pressed
+        high_beam_sw = get_button_state(lsn_lin_data,"high_beam_sw")
+        brake_sw     = get_button_state(lsn_lin_data,"brake_sw ")
+        reverse_sw   = get_button_state(lsn_lin_data,"reverse_sw")
+        front_fog_sw = get_button_state(lsn_lin_data,"front_fog_sw")
+        rear_fog_sw  = get_button_state(lsn_lin_data,"rear_fog_sw")
+        parking_sw   = get_button_state(lsn_lin_data,"parking_sw")
+        pwf_bit0 = get_button_state(lsn_lin_data,"pwf_bit0") & 0x01
+        pwf_bit1 = get_button_state(lsn_lin_data,"pwf_bit1") & 0x01
         pwf_raw = (pwf_bit1 << 1) | pwf_bit0
         
         # --- PWF Gating Logic ---
@@ -170,59 +151,47 @@ class BcmGateway:
 
         # --- Turn & Hazard Logic ---
         if turn_signals.get("LeftTurnLed") == 1:
-            combined_signals["Led_B0_0"] = 1
-            combined_signals["Led_B1_2"] = 1
-            combined_signals["Led_B1_3"] = 1
-            combined_signals["Led_B1_4"] = 1
+            for led in LIGHT_LEDS["trun_left"]:
+                combined_signals[led] = 1
             
         if turn_signals.get("RightTurnLed") == 1:
-            combined_signals["Led_B0_0"] = 1
-            combined_signals["Led_B3_4"] = 1
-            combined_signals["Led_B3_5"] = 1
-            combined_signals["Led_B3_6"] = 1
-
+            for led in LIGHT_LEDS["trun_right"]:
+                combined_signals[led] = 1
         # --- Headlight & Fog Logic ---
         if headlight_signals.get("LowBeamLed") == 1:
-            combined_signals["Led_B1_1"] = 1
-            combined_signals["Led_B3_7"] = 1
+            for led in LIGHT_LEDS["low_beam"]:
+                combined_signals[led] = 1
             
         if headlight_signals.get("HighBeamLed") == 1:
-            combined_signals["Led_B0_7"] = 1
-            combined_signals["Led_B1_1"] = 1
-            combined_signals["Led_B3_7"] = 1
-            combined_signals["Led_B4_6"] = 1
+            for led in LIGHT_LEDS["high_beam"] + LIGHT_LEDS["low_beam"]:
+                combined_signals[led] = 1
 
         # Front/Rear Fog Lights overlap in the physical scheme provided
         if headlight_signals.get("FrontFogLed") == 1:
-            combined_signals["Led_B1_1"] = 1
-            combined_signals["Led_B3_7"] = 1
-            combined_signals["Led_B0_3"] = 1
-            combined_signals["Led_B2_1"] = 1
+            for led in LIGHT_LEDS["front_fog"]:
+                combined_signals[led] = 1
         
         if headlight_signals.get("RearFogLed") == 1:
-            combined_signals["Led_B4_4"] = 1
-            combined_signals["Led_B2_7"] = 1
+            for led in LIGHT_LEDS["rear_fog"]:
+                combined_signals[led] = 1
             
         if headlight_signals.get("ParkingLed") == 1:
-            combined_signals["Led_B0_5"] = 1
-            combined_signals["Led_B1_0"] = 1
-            combined_signals["Led_B2_0"] = 1
-            combined_signals["Led_B0_1"] = 1
+            for led in LIGHT_LEDS["parking"]:
+                combined_signals[led] = 1
             
 
         # --- Brake & Reverse Logic ---
         if brake_signals.get("BrakeLed") == 1:
-            combined_signals["Led_B0_6"] = 1
-            combined_signals["Led_B4_0"] = 1
-            combined_signals["Led_B4_5"] = 1
+            for led in LIGHT_LEDS["brake"]:
+                combined_signals[led] = 1
             
         if reverse_signals.get("ReverseLed") == 1:
-            combined_signals["Led_B3_1"] = 1
-            combined_signals["Led_B1_7"] = 1
+            for led in LIGHT_LEDS["reverse"]:
+                combined_signals[led] = 1
         # DRL fallback mapping
         if turn_signals.get("DrlLed", 0) == 1:
-            combined_signals["Led_B2_0"] = 1
-            combined_signals["Led_B4_7"] = 1
+            for led in LIGHT_LEDS["drl"]:
+                combined_signals[led] = 1
 
         # Step 5: Ask Cantools to encode the dictionary into raw CAN bytes
         try:
