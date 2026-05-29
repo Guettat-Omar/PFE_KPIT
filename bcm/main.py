@@ -111,105 +111,107 @@ def main():
             # Pet the watchdog each cycle (every 30ms)
             systemd.pet_watchdog()
             
-          loop_counter += 1
+            loop_counter += 1
 
-          # Step B: Read LIN
-          lsn_payload = None
-          wbp_payload = None
+            # Step B: Read LIN
+            lsn_payload = None
+            wbp_payload = None
 
-          is_flashing = flash_timer.update()  # sample flash state just before encoding
-          if HARDWARE_AVAILABLE:
-              lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-              raw_wbp = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+            is_flashing = flash_timer.update()  # sample flash state just before encoding
+            if HARDWARE_AVAILABLE:
+                lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
+                raw_wbp = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+    
+                lsn_valid = lsn_payload is not None
+                wbp_payload = wbp_monitor.update(raw_wbp)
+    
+                if not lsn_valid:
+                    logger.warning("[LSN] No response this cycle.")
+                    lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+    
+                if not wbp_monitor.is_healthy and wbp_was_healthy:
+                  logger.warning("[WBP] Node fault  no response for too long.")
+                  
+                wbp_was_healthy = wbp_monitor.is_healthy
   
-              lsn_valid = lsn_payload is not None
-              wbp_payload = wbp_monitor.update(raw_wbp)
-  
-              if not lsn_valid:
-                  logger.warning("[LSN] No response this cycle.")
-                  lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-  
-              if not wbp_monitor.is_healthy and wbp_was_healthy:
-                logger.warning("[WBP] Node fault  no response for too long.")
-                
-              wbp_was_healthy = wbp_monitor.is_healthy
-  
-              # Step C: Process + Send CAN (only if LSN responded)
-              if lsn_valid:
-                  can_payload, window_payload, vehicle_state = gw.process_and_send(
-                      lsn_payload, wbp_payload, is_flashing, pwf_sm.get_state()
-                  )
-                  if can_payload is None:
-                      logger.warning("[GW] process_and_send returned None, skipping CAN send.")
-                      continue
-                  print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
-                  if can_payload:
-                      can_id = gw.light_cmd_msg.frame_id
-                      send(can_id, list(can_payload))
-                      print(f"[CAN] Sent {can_payload.hex()}", flush=True)
-                  if window_payload:
-                      window_id = gw.window_cmd_msg.frame_id
-                      send(window_id, list(window_payload))
-                      print(f"[WINDOW] Sent {window_payload.hex()}", flush=True)
-                      
-                  # Publish SOME/IP state
-                  if vehicle_state:
-                      # Update PWF state machine and add current state back into dashboard data
-                      pwf_request = vehicle_state.pop("pwf_request")
-                      current_pwf = pwf_sm.update(pwf_request)
-                      vehicle_state["pwf_state"] = current_pwf
-                      
-                      logger.info(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
-                      
-                      # Add node health state to vehicle_state
-                      vehicle_state["nodes"] = {
-                          "bcm": "ONLINE",
-                          "lsn": "ONLINE" if lsn_valid else "FAULT",
-                          "wbp": "ONLINE" if wbp_monitor.is_healthy else "FAULT"
-                      }
-                      publisher.publish(vehicle_state)
-              else:
-                  logger.warning("[GW] process_and_send returned None, skipping CAN send.")
+                # Step C: Process + Send CAN (only if LSN responded)
+                if lsn_valid:
+                    can_payload, window_payload, vehicle_state = gw.process_and_send(
+                        lsn_payload, wbp_payload, is_flashing, pwf_sm.get_state()
+                    )
+                    if can_payload is None:
+                        logger.warning("[GW] process_and_send returned None, skipping CAN send.")
+                        continue
+                    print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
+                    if can_payload:
+                        can_id = gw.light_cmd_msg.frame_id
+                        send(can_id, list(can_payload))
+                        print(f"[CAN] Sent {can_payload.hex()}", flush=True)
+                    if window_payload:
+                        window_id = gw.window_cmd_msg.frame_id
+                        send(window_id, list(window_payload))
+                        print(f"[WINDOW] Sent {window_payload.hex()}", flush=True)
+                        
+                    # Publish SOME/IP state
+                    if vehicle_state:
+                        # Update PWF state machine and add current state back into dashboard data
+                        pwf_request = vehicle_state.pop("pwf_request")
+                        current_pwf = pwf_sm.update(pwf_request)
+                        vehicle_state["pwf_state"] = current_pwf
+                        
+                        logger.info(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
+                        
+                        # Add node health state to vehicle_state
+                        vehicle_state["nodes"] = {
+                            "bcm": "ONLINE",
+                            "lsn": "ONLINE" if lsn_valid else "FAULT",
+                            "wbp": "ONLINE" if wbp_monitor.is_healthy else "FAULT"
+                        }
+                        publisher.publish(vehicle_state)
+                else:
+                    logger.warning("[GW] process_and_send returned None, skipping CAN send.")
         
   
-              # Step D: Periodic diagnostic
-              if loop_counter % 50 == 0:
-                  try:
-                      lsn_diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
-                      wbp_diag_payload = request_frame(WBP_DIAG_FRAME_ID, WBP_DIAG_LEN)
+                # Step D: Periodic diagnostic
+                if loop_counter % 50 == 0:
+                    try:
+                        lsn_diag_payload = request_frame(LSN_DIAG_FRAME_ID, LSN_DIAG_LEN)
+                        wbp_diag_payload = request_frame(WBP_DIAG_FRAME_ID, WBP_DIAG_LEN)
 
-                      if lsn_diag_payload is None:
-                          logger.warning("[DIAG] No response from LSN.")
-                      else:
-                          node_state = lsn_diag_payload[0]
-                          can_health = lsn_diag_payload[1]
-                          if node_state == 3 or can_health == 0xFF:
-                              logger.critical(f"LSN DIAGNOSTIC FAULT: NodeState={node_state}, CAN={can_health}")
-                          else:
-                              logger.info(f"LSN Health OK: NodeState={node_state}")
-                      if wbp_diag_payload is None:
-                          logger.warning("[DIAG] No response from WBP.")
-                      else:
-                          node_state = wbp_diag_payload[0]
-                          adc_health = wbp_diag_payload[1]
-                          if node_state == 3 or adc_health == 0xFF:
-                              logger.critical(f"WBP DIAGNOSTIC FAULT: NodeState={node_state}, ADC={adc_health}")
-                          else:
-                              logger.info(f"WBP Health OK: NodeState={node_state}")
-                  except Exception as diag_err:
-                      logger.error(f"[DIAG] Failed: {diag_err}")
+                        if lsn_diag_payload is None:
+                            logger.warning("[DIAG] No response from LSN.")
+                        else:
+                            node_state = lsn_diag_payload[0]
+                            can_health = lsn_diag_payload[1]
+                            if node_state == 3 or can_health == 0xFF:
+                                logger.critical(f"LSN DIAGNOSTIC FAULT: NodeState={node_state}, CAN={can_health}")
+                            else:
+                                logger.info(f"LSN Health OK: NodeState={node_state}")
+                        
+                        if wbp_diag_payload is None:
+                            logger.warning("[DIAG] No response from WBP.")
+                        else:
+                            node_state = wbp_diag_payload[0]
+                            adc_health = wbp_diag_payload[1]
+                            if node_state == 3 or adc_health == 0xFF:
+                                logger.critical(f"WBP DIAGNOSTIC FAULT: NodeState={node_state}, ADC={adc_health}")
+                            else:
+                                logger.info(f"WBP Health OK: NodeState={node_state}")
+                    except Exception as diag_err:
+                        logger.error(f"[DIAG] Failed: {diag_err}")
   
-          else:
-              lsn_payload = b'\x00\x00\x00\x00\x00\x00'
-              wbp_payload = b'\x00\x00\x00\x00'
+            else:
+                lsn_payload = b'\x00\x00\x00\x00\x00\x00'
+                wbp_payload = b'\x00\x00\x00\x00'
   
-          time.sleep(0.002)
+            time.sleep(0.002)
   
-      except KeyboardInterrupt:
-          logger.info("BCM shutting down gracefully...")
-          break
-      except Exception as e:
-          logger.error(f"Unexpected error: {e}")
-          time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("BCM shutting down gracefully...")
+            break
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            time.sleep(1)
+
 if __name__ == "__main__":
     main()
