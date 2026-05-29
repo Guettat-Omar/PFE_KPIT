@@ -76,7 +76,7 @@ class BcmGateway:
         ftp_not_pressed = get_button_state(lsn_lin_data,"ftp_not_pressed")
         ftp_btn = not ftp_not_pressed
         high_beam_sw = get_button_state(lsn_lin_data,"high_beam_sw")
-        brake_sw     = get_button_state(lsn_lin_data,"brake_sw ")
+        brake_sw     = get_button_state(lsn_lin_data,"brake_sw")
         reverse_sw   = get_button_state(lsn_lin_data,"reverse_sw")
         front_fog_sw = get_button_state(lsn_lin_data,"front_fog_sw")
         rear_fog_sw  = get_button_state(lsn_lin_data,"rear_fog_sw")
