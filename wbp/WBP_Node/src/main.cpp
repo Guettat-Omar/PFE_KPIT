@@ -143,40 +143,47 @@ void loop()
     {
         last_sample_time = now;
 
-        // Sample ADC and update window states
-        for (int i = 0; i < 4; i++)
-        {
-            uint16_t adc_val;
-            if (i < 2)
-            {
-                analogRead(ADC_PINS[i]);
-                analogRead(ADC_PINS[i]);
-                adc_val = analogRead(ADC_PINS[i]);
-            }
-            else
-            {
-                adc_val = 1023; // Force unconnected pins to read as 5V (WINDOW_OFF)
-            }
+        // ── Hardware Cross-Talk Protection ───────────────────────
+        // If digital buttons are currently pressed or transitioning, skip ADC updates
+        // to prevent false readings caused by breadboard ground bounce or MUX bleeding.
+        bool raw_door = !digitalRead(BTN_DOOR_LOCK);
+        bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
 
-            windowState new_state = window_switch(adc_val);
-            if (new_state == pending_state[i])
+        if (!raw_door && !raw_child) 
+        {
+            // Sample ADC and update window states ONLY when buttons are untouched
+            for (int i = 0; i < 4; i++)
             {
-                debounce_count[i]++;
-                if (debounce_count[i] >= DEBOUNCE_THRESHOLD)
+                uint16_t adc_val;
+                if (i < 2)
                 {
-                    window_states[i] = static_cast<uint8_t>(new_state);
+                    analogRead(ADC_PINS[i]);
+                    analogRead(ADC_PINS[i]);
+                    adc_val = analogRead(ADC_PINS[i]);
                 }
-            }
-            else
-            {
-                pending_state[i] = new_state;
-                debounce_count[i] = 1;
+                else
+                {
+                    adc_val = 1023; // Force unconnected pins to read as 5V (WINDOW_OFF)
+                }
+
+                windowState new_state = window_switch(adc_val);
+                if (new_state == pending_state[i])
+                {
+                    debounce_count[i]++;
+                    if (debounce_count[i] >= DEBOUNCE_THRESHOLD)
+                    {
+                        window_states[i] = static_cast<uint8_t>(new_state);
+                    }
+                }
+                else
+                {
+                    pending_state[i] = new_state;
+                    debounce_count[i] = 1;
+                }
             }
         }
 
         // Debounced digital button reads (same 100ms threshold as ADC buttons)
-        bool raw_door = !digitalRead(BTN_DOOR_LOCK);
-        bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
 
         if (raw_door == btn_stable[0])
         {
