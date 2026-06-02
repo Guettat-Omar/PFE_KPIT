@@ -103,6 +103,7 @@ ISR(USART_RX_vect)
         break;
 
     default:
+        state = LINSlaveState::WAIT_BREAK;
         break;
     }
 }

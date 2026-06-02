@@ -1,17 +1,21 @@
-LIGHT_BUTTONS = { 
-        "left_btn": (3,6), 
-        "right_btn":(3,5), 
-        "hazard_btn": (4,3),
-        "low_beam_sw"  : (2,3), # byte 2, bit 3
-        "ftp_not_pressed" : (2,6),
-        "high_beam_sw" : (2,2),  # byte 4, bit 2 (momentary, raw)
-        "brake_sw"     : (1,6), # Used to be byte 3 bit 5, moved it away to let rear fog use it
-        "reverse_sw"   : (1,1),
-        "front_fog_sw" : (3,7),  # fog ring engaged
-        "rear_fog_sw"  : (2,0),
-        "parking_sw"   : (2,4),
-        "pwf_bit0" : (4,4),
-        "pwf_bit1" : (4,5)
+LIGHT_BUTTONS = {
+        "left_btn"        : (2, 4),
+        "right_btn"       : (2, 3),
+        "hazard_btn"      : (3, 4),
+        "low_beam_sw"     : (2, 6),
+        "ftp_not_pressed" : (3, 6),  # normally 1, goes 0 when FTP stalk pulled
+        "high_beam_sw"    : (3, 7),
+        "brake_sw"        : (1, 6),
+        "reverse_sw"      : (3, 5),
+        "front_fog_sw"    : (2, 2),
+        "rear_fog_sw"     : (2, 1),
+        "parking_sw"      : (2, 5),
+        "pwf_bit0"        : (4, 4),
+        "pwf_bit1"        : (4, 5),
+        "door_fl_btn"     : (3, 1),
+        "door_fr_btn"     : (3, 0),
+        "door_rl_btn"     : (4, 6),
+        "door_rr_btn"     : (4, 7),
 }
 LIGHT_LEDS = {
     "trun_left" : ["Led_B0_0","Led_B1_2","Led_B1_3","Led_B1_4"],
@@ -23,7 +27,17 @@ LIGHT_LEDS = {
     "parking" : ["Led_B0_5","Led_B1_0","Led_B2_0","Led_B0_1"],
     "brake" : ["Led_B0_6","Led_B4_0","Led_B4_5"],
     "reverse" : ["Led_B3_1","Led_B1_7"],
-    "drl" : ["Led_B2_0","Led_B4_7"]
+    "drl" : ["Led_B2_0","Led_B4_7"],
+    # Door status LEDs: green = door open, red = door closed
+    # Physical HC595 positions after [::-1] reversal: B2_x → phys byte 4, B3_x → phys byte 3
+    "door_fl_green": ["Led_B2_2"],
+    "door_fl_red":   ["Led_B2_3"],
+    "door_fr_green": ["Led_B2_4"],
+    "door_fr_red":   ["Led_B2_5"],
+    "door_rl_green": ["Led_B2_6"],
+    "door_rl_red":   ["Led_B3_0"],
+    "door_rr_green": ["Led_B3_2"],
+    "door_rr_red":   ["Led_B3_3"],
     }
 
 def get_button_state(lin_data: bytes, button_name: str) -> bool:

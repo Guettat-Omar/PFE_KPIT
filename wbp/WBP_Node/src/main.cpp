@@ -149,7 +149,7 @@ void loop()
         bool raw_door = !digitalRead(BTN_DOOR_LOCK);
         bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
 
-        if (!raw_door && !raw_child) 
+        if (!raw_door && !raw_child)
         {
             // Sample ADC and update window states ONLY when buttons are untouched
             for (int i = 0; i < 4; i++)

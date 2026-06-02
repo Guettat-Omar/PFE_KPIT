@@ -8,9 +8,9 @@ import time
 import logging
 from bcm.config import DBC_path, CAN_CHANNEL
 from bcm.app.gateway import BcmGateway
-from bcm.app.flash_timer import FlashTimer
-from bcm.app.wbp_monitor import WBPMonitor
-from bcm.app.someip_publisher import SomeIPPublisher
+from bcm.services.flash_timer import FlashTimer
+from bcm.services.wbp_monitor import WBPMonitor
+from bcm.services.someip_publisher import SomeIPPublisher
 from bcm.app.pwf_sm import PWFStateSM
 from bcm.utils.systemd_watchdog import SystemdNotifier
 import logging.handlers
@@ -46,6 +46,24 @@ logger.addHandler(console_handler)
 
 def main():
     logger.info("Starting Body Control Module (BCM)...")
+    
+    import subprocess
+    # Check serial port
+    if not os.path.exists('/dev/serial0'):
+        logger.critical("LIN serial port /dev/serial0 not found.")
+        sys.exit(1)
+
+    # Check DBC file
+    if not os.path.exists(DBC_path):
+        logger.critical(f"DBC file not found: {DBC_path}")
+        sys.exit(1)
+
+    # Check CAN interface
+    result = subprocess.run(['ip','link','show','can0'], capture_output=True)
+    if result.returncode != 0:
+        logger.critical("CAN interface can0 not found. Bring it up first.")
+        sys.exit(1)
+
     bus = None
     wbp_monitor = WBPMonitor()
     systemd = SystemdNotifier()
@@ -86,20 +104,12 @@ def main():
     # 3. Enter the Infinite Loop (The BCM Lifecycle)
     logger.info("BCM entering active run state.")
     
-    # Example Node ID from our LDF for LSN input is 0x14, Length is 5 bytes (+1 diag).
-    LSN_FRAME_ID = 0x14
-    LSN_PAYLOAD_LEN = 6 
-    
-    # Node ID for Diagnostic Slave Response is 0x3D
-    LSN_DIAG_FRAME_ID = 0x3D
-    LSN_DIAG_LEN = 8
+    from bcm.config import (
+        LSN_FRAME_ID, LSN_PAYLOAD_LEN, WBP_FRAME_ID, WBP_PAYLOAD_LEN,
+        LSN_DIAG_FRAME_ID, LSN_DIAG_LEN, WBP_DIAG_FRAME_ID, WBP_DIAG_LEN
+    )
 
     loop_counter = 0
-    WBP_FRAME_ID = 0x12
-    WBP_PAYLOAD_LEN = 5
-
-    WBP_DIAG_FRAME_ID = 0x3E
-    WBP_DIAG_LEN = 4
 
     wbp_was_healthy = True
     
@@ -142,15 +152,15 @@ def main():
                     if can_payload is None:
                         logger.warning("[GW] process_and_send returned None, skipping CAN send.")
                         continue
-                    print(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}", flush=True)
+                    logger.debug(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}")
                     if can_payload:
                         can_id = gw.light_cmd_msg.frame_id
                         send(can_id, list(can_payload))
-                        print(f"[CAN] Sent {can_payload.hex()}", flush=True)
+                        logger.debug(f"[CAN] Sent {can_payload.hex()}")
                     if window_payload:
                         window_id = gw.window_cmd_msg.frame_id
                         send(window_id, list(window_payload))
-                        print(f"[WINDOW] Sent {window_payload.hex()}", flush=True)
+                        logger.debug(f"[WINDOW] Sent {window_payload.hex()}")
                         
                     # Publish SOME/IP state
                     if vehicle_state:
@@ -159,7 +169,7 @@ def main():
                         current_pwf = pwf_sm.update(pwf_request)
                         vehicle_state["pwf_state"] = current_pwf
                         
-                        logger.info(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
+                        logger.debug(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
                         
                         # Add node health state to vehicle_state
                         vehicle_state["nodes"] = {
@@ -169,7 +179,7 @@ def main():
                         }
                         publisher.publish(vehicle_state)
                 else:
-                    logger.warning("[GW] process_and_send returned None, skipping CAN send.")
+                    logger.debug("[GW] LSN non-responsive, skipping CAN send.")
         
   
                 # Step D: Periodic diagnostic

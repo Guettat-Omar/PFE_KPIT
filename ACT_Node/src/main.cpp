@@ -9,14 +9,19 @@ void setup()
 {
   Serial.begin(9600);
   motor_driver_init();
-  if (CAN.begin(MCP_ANY, CAN_500KBPS, MCP_16MHZ) != CAN_OK)
-  {
-    Serial.println("CAN init failed!");
-    while (1)
-      ;
+  
+  uint8_t retries = 3U;
+  while (retries > 0U) {
+      if (CAN.begin(MCP_ANY, CAN_500KBPS, MCP_16MHZ) == CAN_OK) {
+          CAN.setMode(MCP_NORMAL);
+          Serial.println("[ACT] CAN init OK");
+          return;
+      }
+      retries--;
+      delay(100U);
   }
-  Serial.println("CAN init OK");
-  CAN.setMode(MCP_NORMAL);
+  Serial.println("[ACT] CAN init FAILED. Halting.");
+  while (1U) { delay(1000U); }
 }
 void loop()
 {

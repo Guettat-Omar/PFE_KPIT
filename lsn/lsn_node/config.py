@@ -22,6 +22,10 @@ LIN_diag_frame_id = 0x3D  # 61 in decimal
 CAN_frame_id = 0x102
 CAN_frame_id_response = 0x202
 
+E2E_CRC_POLY = 0x1D
+SEQ_COUNTER_MAX = 16
+LED_DATA_BYTES = 5
+
 # --- State Machine Enum -------------------------------------------------------
 class NodeState(enum.Enum):
     INIT = 1

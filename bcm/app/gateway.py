@@ -35,7 +35,7 @@ class BcmGateway:
             logger.critical(f"Failed to load DBC file: {e}")
             self.db = None
     
-    def decode_wbp_frame(self, wbp_lin_data: bytes):
+    def decode_wbp_frame(self, wbp_lin_data: bytes, any_door_open: bool = False):
         state_to_cmd = {
             0: 0,  # WINDOW_OFF       → cmd=STOP
             1: 2,  # WINDOW_DOWN      → cmd=DOWN
@@ -44,15 +44,20 @@ class BcmGateway:
             4: 4,  # WINDOW_DOWN_AUTO → cmd=DOWN_AUTO
         }
         commands ={}
-        if len(wbp_lin_data) < 5:
+        from bcm.config import WBP_PAYLOAD_LEN
+        if len(wbp_lin_data) < WBP_PAYLOAD_LEN:
             return None
         for i in range(4):
             window_state = wbp_lin_data[i] & 0x07
-            commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)}) 
-            
+            commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)})
+
         raw_door_lock = bool(wbp_lin_data[4] & 0x01)
         if raw_door_lock and not self._door_lock_prev:  # Rising edge: button just pressed
-            self._door_locked = not self._door_locked
+            if any_door_open and not self._door_locked:
+                # Door safety: block lock command while any door is open
+                logger.warning("[DOOR SAFETY] Lock command blocked — door(s) open")
+            else:
+                self._door_locked = not self._door_locked
         self._door_lock_prev = raw_door_lock
 
         Child_Safety = (wbp_lin_data[4] & 0x02) >> 1
@@ -67,7 +72,8 @@ class BcmGateway:
         """
         This runs every 30ms cycle.
         """
-        if not self.db or lsn_lin_data is None or len(lsn_lin_data) < 5 or wbp_lin_data is None or len(wbp_lin_data) < 5:
+        from bcm.config import LSN_PAYLOAD_LEN, WBP_PAYLOAD_LEN
+        if not self.db or lsn_lin_data is None or len(lsn_lin_data) < LSN_PAYLOAD_LEN or wbp_lin_data is None or len(wbp_lin_data) < WBP_PAYLOAD_LEN:
           return None, None, None
         left_btn     = get_button_state(lsn_lin_data,"left_btn")
         right_btn    = get_button_state(lsn_lin_data,"right_btn")
@@ -111,7 +117,13 @@ class BcmGateway:
             f"ftp={ftp_btn} fog_f={front_fog_sw} fog_r={rear_fog_sw} "
             f"brake={brake_sw} rev={reverse_sw}"
         )
-        window_commands = self.decode_wbp_frame(wbp_lin_data)
+        door_fl = get_button_state(lsn_lin_data, "door_fl_btn")
+        door_fr = get_button_state(lsn_lin_data, "door_fr_btn")
+        door_rl = get_button_state(lsn_lin_data, "door_rl_btn")
+        door_rr = get_button_state(lsn_lin_data, "door_rr_btn")
+        any_door_open = door_fl or door_fr or door_rl or door_rr
+
+        window_commands = self.decode_wbp_frame(wbp_lin_data, any_door_open)
         
         # Gate Windows based on PWF state (WOHNEN and FAHREN only)
         if pwf_state < 1:  # PARKEN (0)
@@ -139,11 +151,13 @@ class BcmGateway:
         combined_signals = {
             "Led_B0_0": 0,"Led_B0_1": 0, "Led_B0_3": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
             "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0, "Led_B1_4": 0, "Led_B1_7": 0,
-            "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_7": 0,
-            "Led_B3_1": 0, "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
+            "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_2": 0, "Led_B2_3": 0, "Led_B2_4": 0,
+            "Led_B2_5": 0, "Led_B2_6": 0, "Led_B2_7": 0,
+            "Led_B3_0": 0, "Led_B3_1": 0, "Led_B3_2": 0, "Led_B3_3": 0,
+            "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
             "Led_B4_0": 0, "Led_B4_4": 0, "Led_B4_5": 0, "Led_B4_6": 0, "Led_B4_7": 0,
-            "Seq_Counter": self.seq_counter,  # Add the Seq_Counter to the dictionary
-            "CRC_Checksum": 0  # Placeholder, we will calculate this next!
+            "Seq_Counter": self.seq_counter,
+            "CRC_Checksum": 0
         }
 
         # Increment sequence counter for next time (0 to 15)
@@ -188,6 +202,15 @@ class BcmGateway:
         if reverse_signals.get("ReverseLed") == 1:
             for led in LIGHT_LEDS["reverse"]:
                 combined_signals[led] = 1
+        # Door status LEDs: green ON = door open, red ON = door closed
+        for door_id, btn_key in [("fl", "door_fl_btn"), ("fr", "door_fr_btn"),
+                                  ("rl", "door_rl_btn"), ("rr", "door_rr_btn")]:
+            is_open = get_button_state(lsn_lin_data, btn_key)
+            for led in LIGHT_LEDS[f"door_{door_id}_green"]:
+                combined_signals[led] = 1 if is_open else 0
+            for led in LIGHT_LEDS[f"door_{door_id}_red"]:
+                combined_signals[led] = 0 if is_open else 1
+
         # DRL fallback mapping
         if turn_signals.get("DrlLed", 0) == 1:
             for led in LIGHT_LEDS["drl"]:
@@ -237,7 +260,11 @@ class BcmGateway:
                 },
                 "doors": {
                     "locked": window_commands.get("Door_Lock", 0),
-                    "child_safety": window_commands.get("Child_Safety", 0)
+                    "child_safety": window_commands.get("Child_Safety", 0),
+                    "fl_open": int(door_fl),
+                    "fr_open": int(door_fr),
+                    "rl_open": int(door_rl),
+                    "rr_open": int(door_rr),
                 }
             }
             
