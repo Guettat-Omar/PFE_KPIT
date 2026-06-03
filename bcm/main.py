@@ -13,13 +13,15 @@ from bcm.services.wbp_monitor import WBPMonitor
 from bcm.services.someip_publisher import SomeIPPublisher
 from bcm.app.pwf_sm import PWFStateSM
 from bcm.utils.systemd_watchdog import SystemdNotifier
+from bcm.app.fault_injector import FaultInjector, F1_WBP_TIMEOUT, F2_LSN_TIMEOUT, F3_CAN_E2E_ERROR, F4_PWF_FORCE, F5_WINDOW_BLOCK
+from bcm.services.cmd_server import CmdServer
 import logging.handlers
 
 # Mock imports for hardware drivers. 
 # We use try/except so we can run this on Windows for testing without Raspberry Pi errors.
 try:
     from bcm.drivers.can_driver import init_can, send
-    from bcm.drivers.lin_master import init_lin_master, request_frame, close_lin_master
+    from bcm.drivers.lin_master import init_lin_master, request_frame, close_lin_master, send_frame
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
@@ -68,19 +70,33 @@ def main():
     wbp_monitor = WBPMonitor()
     systemd = SystemdNotifier()
 
+    # Initialize PWF state machine
+    pwf_sm = PWFStateSM()
+
+    # Initialize SOME/IP Publisher
+    publisher = SomeIPPublisher()
+    publisher.start()
+
+    # Initialize Fault Injector and Command Server
+    fault_injector = FaultInjector()
+    cmd_server = CmdServer(fault_injector)
+
     # 1. Initialize Communication Buses
     if HARDWARE_AVAILABLE:
-        # Initialize CAN (e.g., 'can0')
         bus = init_can()
-        # Initialize LIN (e.g., '/dev/serial0')
-        # We assume baudrate is handled inside init_lin_master via config.py
         init_lin_master('/dev/serial0')
+        cmd_server.set_hardware(
+            send_lin=send_frame,
+            send_can=send
+        )
     else:
         logger.warning("Simulation Mode: Hardware buses skipped.")
+    cmd_server.start()
     
     def handle_sigterm(signum, frame):
             logger.warning(f"Received Linux signal {signum}. Shutting down safely...")
             systemd.stopping()
+            publisher.stop()
             bus.shutdown()
             close_lin_master()
             logger.info("--- BCM Node Shutdown Sequence Complete ---")
@@ -91,12 +107,6 @@ def main():
     if not gw.db:
         logger.critical("Cannot start BCM without an active CAN Database.")
         return
-
-    # Initialize PWF state machine
-    pwf_sm = PWFStateSM()
-
-    # Initialize SOME/IP Publisher
-    publisher = SomeIPPublisher()
 
     # Create the 1Hz Heartbeat Timer (500ms ON / 500ms OFF)
     flash_timer = FlashTimer(period_ms=500)
@@ -129,8 +139,8 @@ def main():
 
             is_flashing = flash_timer.update()  # sample flash state just before encoding
             if HARDWARE_AVAILABLE:
-                lsn_payload = request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-                raw_wbp = request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+                lsn_payload = None if fault_injector.is_active(F2_LSN_TIMEOUT) else request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
+                raw_wbp = None if fault_injector.is_active(F1_WBP_TIMEOUT) else request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
     
                 lsn_valid = lsn_payload is not None
                 wbp_payload = wbp_monitor.update(raw_wbp)
@@ -153,20 +163,30 @@ def main():
                         logger.warning("[GW] process_and_send returned None, skipping CAN send.")
                         continue
                     logger.debug(f"[GW] lsn={lsn_payload.hex()} wbp={wbp_payload.hex()} payload={can_payload.hex() if can_payload else 'NONE'}")
+                    # F3: corrupt CRC byte (index 0 after payload reversal in gateway.py)
+                    if fault_injector.is_active(F3_CAN_E2E_ERROR) and can_payload:
+                        can_payload = bytearray(can_payload)
+                        can_payload[0] ^= 0xFF
+                        can_payload = bytes(can_payload)
+                        logger.warning("[FAULT] F3: CAN E2E CRC corrupted")
+
                     if can_payload:
                         can_id = gw.light_cmd_msg.frame_id
                         send(can_id, list(can_payload))
-                        logger.debug(f"[CAN] Sent {can_payload.hex()}")
-                    if window_payload:
+                    if window_payload and not fault_injector.is_active(F5_WINDOW_BLOCK):
                         window_id = gw.window_cmd_msg.frame_id
                         send(window_id, list(window_payload))
-                        logger.debug(f"[WINDOW] Sent {window_payload.hex()}")
+                    elif fault_injector.is_active(F5_WINDOW_BLOCK):
+                        logger.warning("[FAULT] F5: Window commands blocked")
                         
                     # Publish SOME/IP state
                     if vehicle_state:
                         # Update PWF state machine and add current state back into dashboard data
                         pwf_request = vehicle_state.pop("pwf_request")
                         current_pwf = pwf_sm.update(pwf_request)
+                        if fault_injector.is_active(F4_PWF_FORCE):
+                            current_pwf = 0   # force PARKEN regardless of real state
+                            logger.warning("[FAULT] F4: PWF forced to PARKEN")
                         vehicle_state["pwf_state"] = current_pwf
                         
                         logger.debug(f"[PWF] Request: {pwf_request} | Active State: {current_pwf}")
@@ -218,6 +238,7 @@ def main():
   
         except KeyboardInterrupt:
             logger.info("BCM shutting down gracefully...")
+            publisher.stop()
             break
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
