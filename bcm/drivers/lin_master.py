@@ -12,10 +12,8 @@ def init_lin_master(port, baudrate=LIN_BAUDRATE):
 
 def request_frame(frame_id: int, length: int) -> bytes | None:
     try:
-        # We use request_data, not request_frame!
         response = master_instance.request_data(frame_id, expected_data_length=length)
-        # CHANGED FROM DEBUG TO INFO TO SHOW IT ON TERMINAL
-        logger.info(f"Received LIN response from LSN (ID {hex(frame_id)}): {response.hex()}")
+        logging.getLogger("LIN").info(f"RX ID={hex(frame_id)} data={response.hex()}")
         return response
     except LINChecksumError as e:
         logger.error(f"Checksum error for frame ID {hex(frame_id)}: {e}")

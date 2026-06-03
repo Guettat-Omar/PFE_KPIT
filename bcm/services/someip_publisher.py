@@ -139,6 +139,25 @@ class SomeIPPublisher:
                 EVENT_ID,
                 payload
             )
+            lights = vehicle_state.get('lights', {})
+            wins   = vehicle_state.get('windows', {})
+            doors  = vehicle_state.get('doors', {})
+            nodes  = vehicle_state.get('nodes', {})
+            lgt = (f"{lights.get('low_beam',0)}{lights.get('high_beam',0)}"
+                   f"{lights.get('parking',0)}{lights.get('front_fog',0)}"
+                   f"{lights.get('rear_fog',0)}{lights.get('brake',0)}"
+                   f"{lights.get('reverse',0)}")
+            logging.getLogger("SOMEIP").info(
+                f"TX | PWF={vehicle_state.get('pwf_state')} | "
+                f"LGT={lgt} | "
+                f"WIN={wins.get('w1',0)}{wins.get('w2',0)}{wins.get('w3',0)}{wins.get('w4',0)} | "
+                f"DR fl:{doors.get('fl_open',0)} fr:{doors.get('fr_open',0)} "
+                f"rl:{doors.get('rl_open',0)} rr:{doors.get('rr_open',0)} "
+                f"lck:{doors.get('locked',0)} | "
+                f"BCM:{nodes.get('bcm','?')[:2]} "
+                f"LSN:{nodes.get('lsn','?')[:2]} "
+                f"WBP:{nodes.get('wbp','?')[:2]}"
+            )
         except Exception as e:
             logger.error(f"[SOME/IP] Publish failed: {e}")
 
