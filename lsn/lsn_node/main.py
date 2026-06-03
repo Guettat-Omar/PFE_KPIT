@@ -21,17 +21,50 @@ from app.output_module import init as can_init, run
 
 logger = logging.getLogger(__name__)
 
-def main():
-    # Configure the logger to output to BOTH the file and the terminal!
-    logging.basicConfig(
-        level=logging.INFO, 
-        format='[%(asctime)s] %(name)s - %(levelname)s: %(message)s',
-        handlers=[
-            logging.FileHandler("lsn.log"),
-            logging.StreamHandler()
-        ]
+def setup_logging():
+    log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
     )
-    logger.info("--- LSN Node Startup Sequence Initiated ---")
+
+    def make_handler(filename):
+        import logging.handlers
+        h = logging.handlers.RotatingFileHandler(
+            os.path.join(log_dir, filename),
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3
+        )
+        h.setFormatter(fmt)
+        h.setLevel(logging.INFO)
+        return h
+
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.DEBUG)
+
+    # Terminal — WARNING only
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    console.setLevel(logging.WARNING)
+    root.addHandler(console)
+
+    # General LSN log
+    root.addHandler(make_handler("lsn_main.log"))
+
+    # Communications log — LIN and CAN frames
+    comm_logger = logging.getLogger("communication")
+    comm_logger.addHandler(make_handler("communications.log"))
+    comm_logger.propagate = False
+
+
+def main():
+    setup_logging()
+    logger.warning("=" * 50)
+    logger.warning("  LSN NODE STARTING")
+    logger.warning("=" * 50)
     
     logger.info("Initializing GPIO HAL layer...")
     init_gpio()
