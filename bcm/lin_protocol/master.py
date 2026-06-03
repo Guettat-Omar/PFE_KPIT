@@ -7,7 +7,7 @@ from .exceptions import *
 class LINMaster:
     def __init__(self, serial_port=DEFAULT_SERIAL_PORT, baud_rate=DEFAULT_BAUD_RATE, 
                  wakeup_pin=DEFAULT_WAKEUP_PIN):
-        self.ser = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.5)
+        self.ser = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.020)
         self.baud_rate = baud_rate
         self.sleep_time_per_bit = 1.0 / baud_rate
         self.wakeup_pin = wakeup_pin

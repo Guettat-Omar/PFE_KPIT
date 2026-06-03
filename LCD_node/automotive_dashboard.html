@@ -313,10 +313,10 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
 <!-- TAB BAR -->
 <div id="tab-bar">
   <button class="tab-btn active" id="tab-status" onclick="switchTab('status')">
-    <span class="tab-icon">◈</span>VEHICLE STATUS
+    <span class="tab-icon">?</span>VEHICLE STATUS
   </button>
   <button class="tab-btn" id="tab-fault" onclick="switchTab('fault')">
-    <span class="tab-icon">⚠</span>FAULT INJECTION
+    <span class="tab-icon">?</span>FAULT INJECTION
   </button>
 </div>
 
@@ -803,13 +803,26 @@ function updateDashboard(state){
         if(svgU)svgU.style.display='block';
       }
     }
+    var doorOpenMap={
+      'door-fl': !!(doors.fl_open),
+      'door-fr': !!(doors.fr_open),
+      'door-rl': !!(doors.rl_open),
+      'door-rr': !!(doors.rr_open)
+    };
     var doorIds=['door-fl','door-fr','door-rl','door-rr'];
     doorIds.forEach(function(id){
       try{
         var d=document.getElementById(id);
-        if(d){
-          if(locked){d.setAttribute('fill','rgba(255,23,68,0.25)');d.setAttribute('stroke','#ff1744');}
-          else{d.setAttribute('fill','#1e1e32');d.setAttribute('stroke','#3a3a5c');}
+        if(!d) return;
+        var isOpen=doorOpenMap[id];
+        if(isOpen){
+          // Door open — green
+          d.setAttribute('fill','rgba(0,230,118,0.25)');
+          d.setAttribute('stroke','#00e676');
+        } else {
+          // Door closed — neutral grey
+          d.setAttribute('fill','#1e1e32');
+          d.setAttribute('stroke','#3a3a5c');
         }
       }catch(e){}
     });
@@ -874,7 +887,7 @@ function sendCmd(obj){
 
 function connectCmdSocket(){
   try{
-    wsCmds=new WebSocket('ws://bcm-ip:8766');
+    wsCmds=new WebSocket('ws://10.20.0.41:8766');
     wsCmds.onopen=function(){
       while(cmdQueue.length>0) wsCmds.send(cmdQueue.shift());
     };
@@ -921,7 +934,7 @@ function showError(show,msg){
 
 function connectWebSocket(){
   try{
-    ws=new WebSocket('ws://localhost:8765');
+    ws=new WebSocket('ws://10.20.0.39:8765');
     ws.onopen=function(){ showError(false); };
     ws.onmessage=function(event){
       try{

@@ -1,6 +1,7 @@
 import sys
 import os
 import signal
+import subprocess
 # Add the 'didactic_code' root to Python's path so it can find the 'bcm' package
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -15,6 +16,7 @@ from bcm.app.pwf_sm import PWFStateSM
 from bcm.utils.systemd_watchdog import SystemdNotifier
 from bcm.app.fault_injector import FaultInjector, F1_WBP_TIMEOUT, F2_LSN_TIMEOUT, F3_CAN_E2E_ERROR, F4_PWF_FORCE, F5_WINDOW_BLOCK
 from bcm.services.cmd_server import CmdServer
+from bcm.services.daemon_launcher import start_someipyd
 import logging.handlers
 
 # Mock imports for hardware drivers. 
@@ -28,28 +30,76 @@ except ImportError:
     print("WARNING: Hardware drivers not found. Running in simulation mode.")
     
 logger = logging.getLogger("BCM_MAIN")
-logger.setLevel(logging.INFO)
 
-# Define the format of the logs (e.g., "2026-04-09 14:00:00 - INFO: Starting...")
-log_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+def setup_logging():
+    log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
 
-# 1. Create the Rotating File Handler (Max 5MB, keep 3 backup files)
-log_path = os.path.join(os.path.dirname(__file__), 'bcm_node.log')
-file_handler = logging.handlers.RotatingFileHandler(
-    log_path, maxBytes=5*1024*1024, backupCount=3
-)
-file_handler.setFormatter(log_formatter)
-logger.addHandler(file_handler)
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
-# 2. Keep the Console Handler (so you still see logs if you perfectly run it manually)
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(log_formatter)
-logger.addHandler(console_handler)
+    def make_file_handler(filename):
+        h = logging.handlers.RotatingFileHandler(
+            os.path.join(log_dir, filename),
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3
+        )
+        h.setFormatter(fmt)
+        h.setLevel(logging.INFO)
+        return h
+
+    # Root logger  clear any handlers added by imported libraries
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.DEBUG)
+
+    # Terminal  WARNING and above only (no noise)
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    console.setLevel(logging.WARNING)
+    root.addHandler(console)
+
+    # BCM main log
+    bcm_logger = logging.getLogger("BCM_MAIN")
+    bcm_logger.addHandler(make_file_handler("bcm_main.log"))
+    bcm_logger.propagate = False
+
+    # CAN bus log
+    can_logger = logging.getLogger("CAN")
+    can_logger.addHandler(make_file_handler("can_bus.log"))
+    can_logger.propagate = False
+
+    # LIN bus log
+    lin_logger = logging.getLogger("LIN")
+    lin_logger.addHandler(make_file_handler("lin_bus.log"))
+    lin_logger.propagate = False
+
+    # SOME/IP log
+    someip_logger = logging.getLogger("SOMEIP")
+    someip_logger.addHandler(make_file_handler("someip.log"))
+    someip_logger.propagate = False
+
+    # Suppress internal library noise
+    logging.getLogger("someipy").setLevel(logging.ERROR)
+    logging.getLogger("websockets").setLevel(logging.ERROR)
+
+# Block someipy and websockets from printing to any handler
+    class _SuppressFilter(logging.Filter):
+        def filter(self, record):
+            return 'someipy' not in record.name and 'websockets' not in record.name
+
+    for handler in root.handlers:
+        handler.addFilter(_SuppressFilter())
 
 def main():
-    logger.info("Starting Body Control Module (BCM)...")
-    
-    import subprocess
+    setup_logging()
+    start_someipyd("/home/pi2/someipyd_bcm.json")
+    logger.warning("=" * 50)
+    logger.warning("  BCM NODE STARTING")
+    logger.warning("=" * 50)
+
     # Check serial port
     if not os.path.exists('/dev/serial0'):
         logger.critical("LIN serial port /dev/serial0 not found.")
@@ -112,7 +162,7 @@ def main():
     flash_timer = FlashTimer(period_ms=500)
 
     # 3. Enter the Infinite Loop (The BCM Lifecycle)
-    logger.info("BCM entering active run state.")
+    logger.warning("BCM entering active run state.")
     
     from bcm.config import (
         LSN_FRAME_ID, LSN_PAYLOAD_LEN, WBP_FRAME_ID, WBP_PAYLOAD_LEN,
@@ -142,11 +192,11 @@ def main():
                 lsn_payload = None if fault_injector.is_active(F2_LSN_TIMEOUT) else request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
                 raw_wbp = None if fault_injector.is_active(F1_WBP_TIMEOUT) else request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
     
-                lsn_valid = lsn_payload is not None
+                lsn_valid = lsn_payload is not None and len(lsn_payload) > 0
                 wbp_payload = wbp_monitor.update(raw_wbp)
     
                 if not lsn_valid:
-                    logger.warning("[LSN] No response this cycle.")
+                    logger.debug("[LSN] No response this cycle.")
                     lsn_payload = b'\x00\x00\x00\x00\x00\x00'
     
                 if not wbp_monitor.is_healthy and wbp_was_healthy:
@@ -173,9 +223,11 @@ def main():
                     if can_payload:
                         can_id = gw.light_cmd_msg.frame_id
                         send(can_id, list(can_payload))
+                        logging.getLogger("CAN").info(f"TX ID=0x{can_id:03X} data={bytes(can_payload).hex()}")
                     if window_payload and not fault_injector.is_active(F5_WINDOW_BLOCK):
                         window_id = gw.window_cmd_msg.frame_id
                         send(window_id, list(window_payload))
+                        logging.getLogger("CAN").info(f"TX ID=0x{window_id:03X} data={bytes(window_payload).hex()}")
                     elif fault_injector.is_active(F5_WINDOW_BLOCK):
                         logger.warning("[FAULT] F5: Window commands blocked")
                         
@@ -200,6 +252,14 @@ def main():
                         publisher.publish(vehicle_state)
                 else:
                     logger.debug("[GW] LSN non-responsive, skipping CAN send.")
+                    publisher.publish({
+                        "lights": {"low_beam":0,"high_beam":0,"parking":0,"front_fog":0,"rear_fog":0,"brake":0,"reverse":0},
+                        "turn": {"left":0,"right":0,"hazard":0},
+                        "windows": {"w1":0,"w2":0,"w3":0,"w4":0},
+                        "doors": {"locked":0,"child_safety":0,"fl_open":0,"fr_open":0,"rl_open":0,"rr_open":0},
+                        "pwf_state": pwf_sm.get_state(),
+                        "nodes": {"bcm":"ONLINE","lsn":"FAULT","wbp":"ONLINE" if wbp_monitor.is_healthy else "FAULT"}
+                    })
         
   
                 # Step D: Periodic diagnostic
@@ -237,7 +297,7 @@ def main():
             time.sleep(0.002)
   
         except KeyboardInterrupt:
-            logger.info("BCM shutting down gracefully...")
+            logger.warning("BCM shutting down gracefully...")
             publisher.stop()
             break
         except Exception as e:

@@ -121,6 +121,7 @@ class BcmGateway:
         door_fr = get_button_state(lsn_lin_data, "door_fr_btn")
         door_rl = get_button_state(lsn_lin_data, "door_rl_btn")
         door_rr = get_button_state(lsn_lin_data, "door_rr_btn")
+        logger.info(f"[DOOR] raw={lsn_lin_data.hex()} fl={door_fl} fr={door_fr} rl={door_rl} rr={door_rr}")
         any_door_open = door_fl or door_fr or door_rl or door_rr
 
         window_commands = self.decode_wbp_frame(wbp_lin_data, any_door_open)
