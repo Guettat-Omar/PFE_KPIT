@@ -1,92 +1,168 @@
-import socket
-import struct
-import json
 import asyncio
+import json
+import logging
+import os
+import subprocess
+import time
 import websockets
 
-# SOME/IP constants
-MULTICAST_ADDR = '224.0.0.1'
-SOMEIP_PORT = 30490
+from someipy import (
+    ServiceBuilder,
+    ClientServiceInstance,
+    Event,
+    EventGroup,
+    TransportLayerProtocol,
+    connect_to_someipy_daemon,
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def start_someipyd(config_path: str):
+    socket_path = "/tmp/someipyd.sock"
+    # Remove stale socket if daemon is not running
+    if os.path.exists(socket_path):
+        os.remove(socket_path)
+    subprocess.Popen(
+        ["someipyd", "--config", config_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True
+    )
+    # Wait for socket to appear
+    for _ in range(50):
+        if os.path.exists(socket_path):
+            break
+        time.sleep(0.1)
+    # Extra time for daemon to finish internal setup
+    time.sleep(1.0)
+
+
+# -- Must match BCM publisher exactly -----------------------------------------
+SERVICE_ID    = 0x1234
+...
+# -- Must match BCM publisher exactly -----------------------------------------
+# If any of these differ from BCM, LCD will never find the service.
+SERVICE_ID    = 0x1234
+INSTANCE_ID   = 0x0001
+EVENT_ID      = 0x8001
+EVENTGROUP_ID = 0x0001
+
+LCD_IP        = "10.20.0.39"   # this Pi's IP
+DATA_PORT     = 30499          # must match BCM's DATA_PORT
+
 WEBSOCKET_PORT = 8765
 
-# Global set of connected WebSocket clients
-connected_clients = set()
+# -- Connected WebSocket clients -----------------------------------------------
+connected_clients: set = set()
 
-async def websocket_handler(websocket, path):
-    """Handle new WebSocket connections from the dashboard"""
+
+async def websocket_handler(websocket):
+    """Accept dashboard browser connections and keep them alive."""
     connected_clients.add(websocket)
-    print(f"Dashboard connected: {websocket.remote_address}")
+    logger.info(f"Dashboard connected: {websocket.remote_address}")
     try:
-        # Keep connection alive, wait for disconnect
         await websocket.wait_closed()
     finally:
-        connected_clients.remove(websocket)
-        print(f"Dashboard disconnected: {websocket.remote_address}")
+        connected_clients.discard(websocket)
+        logger.info(f"Dashboard disconnected")
 
-async def broadcast_state(vehicle_state):
-    """Send state to all connected WebSocket clients"""
-    if connected_clients:
-        message = json.dumps(vehicle_state)
-        # Send to all clients concurrently
-        await asyncio.gather(
-            *[client.send(message) for client in connected_clients],
-            return_exceptions=True
-        )
 
-async def someip_receiver():
-    """Receive SOME/IP packets and forward to WebSocket clients"""
-    # Create UDP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', SOMEIP_PORT))
-    
-    # Join multicast group
-    mreq = struct.pack('4sL', socket.inet_aton(MULTICAST_ADDR), socket.INADDR_ANY)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    
-    # Make socket non-blocking for asyncio
-    sock.setblocking(False)
-    
-    print(f"Listening for SOME/IP events on {MULTICAST_ADDR}:{SOMEIP_PORT}")
-    
-    loop = asyncio.get_event_loop()
-    
-    while True:
-        # Wait for data asynchronously
-        data = await loop.sock_recv(sock, 2048)
-        
-        # Parse SOME/IP header
-        if len(data) < 16:
-            continue
-        
-        header = data[:16]
-        payload = data[16:]
-        
-        message_id, length, client_id, session_id, proto_ver, iface_ver, msg_type, ret_code = \
-            struct.unpack('>IIHHBBBB', header)
-        
-        service_id = message_id >> 16
-        event_id = message_id & 0xFFFF
-        
-        # Deserialize JSON payload
+async def broadcast_to_dashboard(vehicle_state: dict):
+    """Send vehicle state to all connected browser clients."""
+    if not connected_clients:
+        return
+    message = json.dumps(vehicle_state)
+    await asyncio.gather(
+        *[client.send(message) for client in connected_clients],
+        return_exceptions=True
+    )
+
+
+async def start_someip_subscriber():
+    """
+    Connect to the local someipyd daemon, build the service definition,
+    subscribe to BCM's eventgroup, and register a callback.
+    """
+
+    # Step 1   Build the EXACT same service definition as BCM.
+    # LCD doesn't offer anything  it just needs this definition
+    # to know what it's looking for.
+    vehicle_state_event = Event(
+        id=EVENT_ID,
+        protocol=TransportLayerProtocol.UDP
+    )
+    eventgroup = EventGroup(
+        id=EVENTGROUP_ID,
+        events=[vehicle_state_event]
+    )
+    service = (
+        ServiceBuilder()
+        .with_service_id(SERVICE_ID)
+        .with_major_version(1)
+        .with_eventgroup(eventgroup)
+        .build()
+    )
+
+    # Step 2   Connect to LCD's local someipyd daemon.
+    logger.info("[SOME/IP] Connecting to someipyd daemon...")
+    daemon = await connect_to_someipy_daemon()
+
+    # Step 3   Create the client service instance.
+    # LCD's endpoint_ip tells the daemon which interface to use.
+    # endpoint_port is where LCD will receive unicast event data.
+    client = ClientServiceInstance(
+        daemon=daemon,
+        service=service,
+        instance_id=INSTANCE_ID,
+        endpoint_ip=LCD_IP,
+        endpoint_port=DATA_PORT,
+    )
+
+    # Step 4   Register the callback.
+    # This function is called automatically every time BCM sends an event.
+    def on_vehicle_state_received(event_id: int, payload: bytes):
+        if event_id != EVENT_ID:
+            return
         try:
             vehicle_state = json.loads(payload.decode('utf-8'))
-            print(f"Session {session_id}: {vehicle_state}")
-            
-            # Forward to WebSocket clients
-            await broadcast_state(vehicle_state)
-            
+            logger.info(f"[SOME/IP] Received: {vehicle_state}")
+
+            # Schedule the WebSocket broadcast from inside the async loop.
+            # asyncio.ensure_future() posts it to the running event loop.
+            asyncio.ensure_future(broadcast_to_dashboard(vehicle_state))
+
         except json.JSONDecodeError as e:
-            print(f"Invalid JSON: {e}")
+            logger.error(f"[SOME/IP] Bad payload: {e}")
+
+    client.register_callback(on_vehicle_state_received)
+
+    # Step 5   Subscribe to BCM's eventgroup.
+    # LCD tells the daemon: "When you find Service 0x1234, subscribe to
+    # eventgroup 0x0001 and keep the subscription alive for 10 seconds
+    # (renewing automatically)."
+    client.subscribe_eventgroup(eventgroup, ttl_subscription_seconds=10)
+    logger.info(
+        f"[SOME/IP] Subscribed to Service 0x{SERVICE_ID:04X} "
+        f"EventGroup 0x{EVENTGROUP_ID:04X}"
+    )
+
 
 async def main():
-    """Run both SOME/IP receiver and WebSocket server concurrently"""
-    # Start WebSocket server
-    ws_server = await websockets.serve(websocket_handler, 'localhost', WEBSOCKET_PORT)
-    print(f"WebSocket server listening on ws://localhost:{WEBSOCKET_PORT}")
-    
-    # Run SOME/IP receiver
-    await someip_receiver()
+    start_someipyd("/home/rasp2/someipyd_lcd.json")
+    await start_someip_subscriber()
 
-if __name__ == '__main__':
+    # Start the WebSocket server for the dashboard browser
+    ws_server = await websockets.serve(
+        websocket_handler,
+        "0.0.0.0",      # listen on all interfaces, not just localhost
+        WEBSOCKET_PORT
+    )
+    logger.info(f"[WS] Dashboard server on ws://0.0.0.0:{WEBSOCKET_PORT}")
+
+    # Keep running forever   the callback handles everything
+    await asyncio.get_event_loop().create_future()
+
+
+if __name__ == "__main__":
     asyncio.run(main())

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=800, height=480, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Automotive Didactic Platform</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap');
@@ -25,11 +25,18 @@
 }
 
 html,body{
-  width:800px;height:480px;overflow:hidden;
+  width:100vw;height:100vh;overflow:hidden;max-height:100vh;
   background:var(--bg);
   font-family:'Orbitron',monospace;
   color:var(--text-bright);
   user-select:none;
+}
+#app-root{
+  width:800px;
+  height:529px;
+  position:fixed;
+  top:0;left:0;
+  transform-origin:top left;
 }
 
 body::after{
@@ -87,7 +94,7 @@ body::after{
 
 /* ===== MAIN PANEL (Vehicle Status tab) ===== */
 #main-panel{
-  height:344px;display:grid;grid-template-columns:220px 1fr 220px;
+  height:392px;display:grid;grid-template-columns:220px 1fr 220px;
   gap:0;position:relative;overflow:hidden;
 }
 #main-panel::before,#main-panel::after{
@@ -105,7 +112,7 @@ body::after{
 .col-title{font-size:13px;letter-spacing:3px;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--border);}
 
 /* ===== LIGHT PILLS ===== */
-.light-pills{display:flex;flex-direction:column;gap:6px;}
+.light-pills{display:flex;flex-direction:column;gap:4px;}
 .pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;border:1px solid var(--border);background:#0d0d1a;transition:all 0.3s ease;min-height:34px;}
 .pill.on{border-color:var(--pill-color);background:rgba(var(--pill-rgb),0.08);box-shadow:0 0 8px rgba(var(--pill-rgb),0.25),inset 0 0 8px rgba(var(--pill-rgb),0.05);}
 .pill-icon{font-size:24px;width:24px;text-align:center;opacity:0.3;transition:all 0.3s ease;}
@@ -140,13 +147,13 @@ body::after{
 .win-cell.moving .win-dir{color:var(--cyan);}
 
 /* ===== RIGHT COL ===== */
-.lock-area{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:12px;padding:10px;}
+.lock-area{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:8px;padding:6px;}
 .lock-icon-wrap{width:64px;height:64px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:4px;background:#0d0d1a;transition:all 0.3s ease;}
 .lock-icon-wrap.locked{border-color:var(--red);box-shadow:0 0 12px rgba(255,23,68,0.3);}
 .lock-icon-wrap.unlocked{border-color:var(--green);box-shadow:0 0 12px rgba(0,230,118,0.3);}
 .lock-icon-wrap svg{width:32px;height:32px;transition:all 0.3s ease;}
 .lock-status-text{font-size:15px;letter-spacing:2px;transition:all 0.3s ease;}
-.child-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:#0d0d1a;margin-bottom:14px;transition:all 0.3s ease;}
+.child-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:#0d0d1a;margin-bottom:8px;transition:all 0.3s ease;}
 .child-row.on{border-color:#00e676;box-shadow:0 0 6px rgba(0,230,118,0.2);}
 .child-icon{font-size:20px;color:var(--text-dim);transition:all 0.3s ease;}
 .child-row.on .child-icon{color:var(--amber);}
@@ -174,7 +181,7 @@ body::after{
 
 /* ===== FAULT INJECTION TAB ===== */
 #fault-panel{
-  height:344px;display:flex;flex-direction:column;
+  height:392px;display:flex;flex-direction:column;
   padding:12px 16px;overflow:hidden;
 }
 .fi-header{
@@ -293,6 +300,7 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
 </style>
 </head>
 <body>
+<div id="app-root">
 
 <!-- TOP BAR -->
 <div id="top-bar">
@@ -485,7 +493,7 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
       <div class="fi-right">
         <div class="fault-log-section">
           <div class="fault-log-label">&#9654; Active Faults Log</div>
-          <div id="fault-log"><span style="color:#2a2a40;font-size:9px;">â€” NO EVENTS â€”</span></div>
+          <div id="fault-log"><span style="color:#2a2a40;font-size:9px;">— NO EVENTS —</span></div>
         </div>
 
         <!-- MANUAL FRAME INJECTION (collapsible) -->
@@ -501,10 +509,10 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
               <div class="fb-row">
                 <span class="fb-label">ID</span>
                 <select class="fb-select" id="lin-id">
-                  <option value="0x12">0x12 â€” WBP</option>
-                  <option value="0x14">0x14 â€” LSN</option>
-                  <option value="0x3D">0x3D â€” Diag</option>
-                  <option value="0x3E">0x3E â€” WBP Diag</option>
+                  <option value="0x12">0x12 — WBP</option>
+                  <option value="0x14">0x14 — LSN</option>
+                  <option value="0x3D">0x3D — Diag</option>
+                  <option value="0x3E">0x3E — WBP Diag</option>
                 </select>
               </div>
               <div class="fb-row" style="flex-wrap:wrap;gap:3px;">
@@ -643,15 +651,15 @@ function setFaultVisual(id, active){
 function toggleFault(id){
   try{
     if(activeFaults[id]){
-      // Already active â€” clear this fault
+      // Already active — clear this fault
       activeFaults[id]=false;
       setFaultVisual(id, false);
-      appendLog(faultTimestamp()+' F'+id+' CLEARED â€” '+FAULT_NAMES[id], 'cleared');
+      appendLog(faultTimestamp()+' F'+id+' CLEARED — '+FAULT_NAMES[id], 'cleared');
       sendCmd({cmd:'clear_fault',fault_id:id});
     }else{
       activeFaults[id]=true;
       setFaultVisual(id, true);
-      appendLog(faultTimestamp()+' F'+id+' INJECTED â€” '+FAULT_NAMES[id], 'injected');
+      appendLog(faultTimestamp()+' F'+id+' INJECTED — '+FAULT_NAMES[id], 'injected');
       sendCmd({cmd:'inject_fault',fault_id:id});
     }
   }catch(e){}
@@ -670,7 +678,7 @@ function clearAllFaults(){
     if(anyActive){
       appendLog(faultTimestamp()+' ALL FAULTS CLEARED', 'cleared');
     }else{
-      appendLog(faultTimestamp()+' CLEAR ALL â€” no active faults', 'cmd');
+      appendLog(faultTimestamp()+' CLEAR ALL — no active faults', 'cmd');
     }
     sendCmd({cmd:'clear_all_faults'});
   }catch(e){}
@@ -804,10 +812,10 @@ function updateDashboard(state){
       }
     }
     var doorOpenMap={
-      'door-fl': !!(doors.fl_open),
-      'door-fr': !!(doors.fr_open),
-      'door-rl': !!(doors.rl_open),
-      'door-rr': !!(doors.rr_open)
+      'door-fl': !!(doors.fl),
+      'door-fr': !!(doors.fr),
+      'door-rl': !!(doors.rl),
+      'door-rr': !!(doors.rr)
     };
     var doorIds=['door-fl','door-fr','door-rl','door-rr'];
     doorIds.forEach(function(id){
@@ -816,13 +824,13 @@ function updateDashboard(state){
         if(!d) return;
         var isOpen=doorOpenMap[id];
         if(isOpen){
-          // Door open â€” green
+          // Door open — green
           d.setAttribute('fill','rgba(0,230,118,0.25)');
           d.setAttribute('stroke','#00e676');
         } else {
-          // Door closed â€” neutral grey
-          d.setAttribute('fill','#1e1e32');
-          d.setAttribute('stroke','#3a3a5c');
+          // Door closed — red
+          d.setAttribute('fill','rgba(255,23,68,0.18)');
+          d.setAttribute('stroke','#ff1744');
         }
       }catch(e){}
     });
@@ -948,18 +956,42 @@ function connectWebSocket(){
      };
     ws.onclose=function(){
       showError(true,'NO SIGNAL<br><span style="font-size:16px;font-weight:normal;letter-spacing:1px;opacity:0.8;">Waiting for vehicle data...</span>');
-      updateDashboard({lights:{low_beam:0,high_beam:0,parking:0,front_fog:0,rear_fog:0,brake:0,reverse:0},turn:{left:0,right:0,hazard:0},windows:{w1:0,w2:0,w3:0,w4:0},doors:{locked:1,child_safety:0},nodes:{bcm:'OFFLINE',lsn:'OFFLINE',wbp:'OFFLINE'}});
+      updateDashboard({lights:{low_beam:0,high_beam:0,parking:0,front_fog:0,rear_fog:0,brake:0,reverse:0},turn:{left:0,right:0,hazard:0},windows:{w1:0,w2:0,w3:0,w4:0},doors:{locked:1,child_safety:0,fl:0,fr:0,rl:0,rr:0},nodes:{bcm:'OFFLINE',lsn:'OFFLINE',wbp:'OFFLINE'}});
       setTimeout(connectWebSocket,2000);
     };
   }catch(e){ setTimeout(connectWebSocket,2000); }
 }
 
-updateDashboard({lights:{low_beam:0,high_beam:0,parking:0,front_fog:0,rear_fog:0,brake:0,reverse:0},turn:{left:0,right:0,hazard:0},windows:{w1:0,w2:0,w3:0,w4:0},doors:{locked:1,child_safety:0},nodes:{bcm:'OFFLINE',lsn:'OFFLINE',wbp:'OFFLINE'}});
+updateDashboard({lights:{low_beam:0,high_beam:0,parking:0,front_fog:0,rear_fog:0,brake:0,reverse:0},turn:{left:0,right:0,hazard:0},windows:{w1:0,w2:0,w3:0,w4:0},doors:{locked:1,child_safety:0,fl:0,fr:0,rl:0,rr:0},nodes:{bcm:'OFFLINE',lsn:'OFFLINE',wbp:'OFFLINE'}});
 showError(true,'WAITING FOR SIGNAL<br><span style="font-size:16px;font-weight:normal;letter-spacing:1px;opacity:0.8;">Connecting to vehicle...</span>');
 connectWebSocket();
 connectCmdSocket();
 
 }catch(e){}
+
+</script>
+<script>
+function applyScale(){
+  var avW=window.innerWidth;
+  var avH=window.innerHeight;
+  var scale=Math.min(avW/800, avH/529);
+  var scaledW=800*scale;
+  var scaledH=529*scale;
+  var offsetX=(avW-scaledW)/2;
+  var offsetY=(avH-scaledH)/2;
+  if(offsetY<0) offsetY=0;
+  var root=document.getElementById("app-root");
+  if(root){
+    root.style.transformOrigin="top left";
+    root.style.transform="scale("+scale+")";
+    root.style.left=offsetX+"px";
+    root.style.top=offsetY+"px";
+    root.style.width="800px";
+    root.style.height="529px";
+  }
+}
+applyScale();
+window.addEventListener("resize",applyScale);
 </script>
 </body>
 </html>

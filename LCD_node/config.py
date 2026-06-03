@@ -1,0 +1,10 @@
+LCD_IP         = "10.20.0.39"
+BCM_IP         = "10.20.0.41"
+DAEMON_CONFIG  = "/home/rasp2/someipyd_lcd.json"
+SERVICE_ID     = 0x1234
+INSTANCE_ID    = 0x0001
+EVENT_ID       = 0x8001
+EVENTGROUP_ID  = 0x0001
+DATA_PORT      = 30499
+WS_STATE_PORT  = 8765
+HTTP_PORT      = 8080

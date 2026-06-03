@@ -1,0 +1,21 @@
+2026-06-03 17:16:44 [WARNING] __main__: ==================================================
+2026-06-03 17:16:44 [WARNING] __main__:   LCD NODE STARTING
+2026-06-03 17:16:44 [WARNING] __main__: ==================================================
+2026-06-03 17:16:44 [WARNING] utils.daemon_launcher: [DAEMON] Starting someipyd: /home/rasp2/someipyd_lcd.json
+2026-06-03 17:16:47 [WARNING] utils.daemon_launcher: [DAEMON] someipyd ready
+2026-06-03 17:16:47 [WARNING] __main__: [HTTP] Dashboard at http://10.20.0.39:8080/automotive_dashboard.html
+2026-06-03 17:16:47 [WARNING] services.websocket_server: [WS] State server on ws://0.0.0.0:8765
+2026-06-03 17:16:47 [WARNING] services.someip_subscriber: [SOME/IP] Connecting to daemon...
+2026-06-03 17:16:47 [WARNING] services.someip_subscriber: [SOME/IP] Subscribed to Service 0x1234 EventGroup 0x0001
+2026-06-03 17:16:47 [WARNING] __main__: [LCD] Active — SOME/IP and WebSocket running
+2026-06-03 17:16:49 [WARNING] services.websocket_server: [WS] Dashboard connected: ('10.20.0.2', 56746)
+2026-06-03 17:16:50 [WARNING] services.websocket_server: [WS] Dashboard connected: ('10.20.0.2', 55676)
+2026-06-03 17:16:53 [WARNING] services.websocket_server: [WS] Dashboard disconnected
+2026-06-03 17:16:53 [WARNING] services.websocket_server: [WS] Dashboard connected: ('10.20.0.2', 60642)
+2026-06-03 17:16:54 [WARNING] services.websocket_server: [WS] Dashboard disconnected
+2026-06-03 17:16:54 [WARNING] services.websocket_server: [WS] Dashboard connected: ('10.20.0.2', 50718)
+2026-06-03 17:16:55 [WARNING] services.websocket_server: [WS] Dashboard disconnected
+2026-06-03 17:16:56 [WARNING] services.websocket_server: [WS] Dashboard connected: ('10.20.0.2', 49910)
+2026-06-03 17:18:08 [WARNING] services.websocket_server: [WS] Dashboard disconnected
+2026-06-03 17:18:08 [WARNING] services.websocket_server: [WS] Dashboard disconnected
+2026-06-03 17:18:08 [WARNING] __main__: [LCD] Shutting down gracefully...
