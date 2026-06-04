@@ -55,7 +55,7 @@ body::after{
 #pwf-indicator{display:flex;gap:8px;justify-content:center;align-items:center;}
 .pwf-pill{padding:4px 10px;border-radius:4px;font-weight:700;font-size:14px;letter-spacing:2px;border:1px solid var(--border);color:var(--text-dim);transition:all 0.3s ease;}
 .pwf-pill.active{border-color:currentColor;box-shadow:0 0 10px currentColor;color:var(--text-bright);}
-#clock{font-size:26px;font-weight:700;color:var(--blue);letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.5);}
+#clock{font-size:26px;font-weight:700;margin-left: 20px;color:var(--blue);letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.5);}
 #bcm-status{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:2px;color:var(--text-mid);}
 .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse-green 2s infinite;}
 .pulse-dot.fault{background:var(--red);animation:pulse-red 0.8s infinite;}
@@ -109,7 +109,7 @@ body::after{
 
 .col{padding:16px 12px;border-right:1px solid var(--border);}
 .col:last-child{border-right:none;border-left:1px solid var(--border);}
-.col-title{font-size:13px;letter-spacing:3px;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.col-title{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--border);}
 
 /* ===== LIGHT PILLS ===== */
 .light-pills{display:flex;flex-direction:column;gap:4px;}
@@ -117,9 +117,9 @@ body::after{
 .pill.on{border-color:var(--pill-color);background:rgba(var(--pill-rgb),0.08);box-shadow:0 0 8px rgba(var(--pill-rgb),0.25),inset 0 0 8px rgba(var(--pill-rgb),0.05);}
 .pill-icon{font-size:24px;width:24px;text-align:center;opacity:0.3;transition:all 0.3s ease;}
 .pill.on .pill-icon{opacity:1;color:var(--pill-color);filter:drop-shadow(0 0 3px var(--pill-color));}
-.pill-label{font-size:14px;letter-spacing:1.5px;color:var(--text-dim);flex:1;transition:all 0.3s ease;}
+.pill-label{font-size:14px;font-weight:700;letter-spacing:1.5px;color:var(--text-dim);flex:1;transition:all 0.3s ease;}
 .pill.on .pill-label{color:var(--text-bright);}
-.pill-state{font-size:14px;letter-spacing:1px;color:var(--text-dim);transition:all 0.3s ease;}
+.pill-state{font-size:14px;font-weight:700;letter-spacing:1px;color:var(--text-dim);transition:all 0.3s ease;}
 .pill.on .pill-state{color:var(--pill-color);}
 
 /* ===== CENTER COL ===== */
@@ -135,15 +135,15 @@ body::after{
 .hazard-btn svg{width:36px;height:36px;fill:var(--text-dim);transition:fill 0.3s;}
 .hazard-btn.on svg{fill:#ff1744;}
 .section-divider{height:1px;background:var(--border);margin:8px 0 12px;}
-.sub-title{font-size:13px;letter-spacing:2px;color:var(--text-dim);margin-bottom:10px;}
+.sub-title{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--text-dim);margin-bottom:10px;}
 .window-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .win-cell{border:1px solid var(--border);border-radius:4px;background:#0d0d1a;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:60px;transition:all 0.3s ease;}
 .win-cell.moving{border-color:var(--cyan);box-shadow:0 0 6px rgba(0,212,255,0.2);}
-.win-label{font-size:13px;letter-spacing:2px;color:var(--text-dim);}
+.win-label{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--text-dim);}
 .win-cell.moving .win-label{color:var(--cyan);}
 .win-icon{font-size:26px;color:var(--text-dim);transition:all 0.3s ease;line-height:1;}
 .win-cell.moving .win-icon{color:var(--cyan);text-shadow:0 0 6px var(--cyan);}
-.win-dir{font-size:13px;color:var(--text-dim);letter-spacing:1px;transition:all 0.3s ease;}
+.win-dir{font-size:13px;font-weight:700;color:var(--text-dim);letter-spacing:1px;transition:all 0.3s ease;}
 .win-cell.moving .win-dir{color:var(--cyan);}
 
 /* ===== RIGHT COL ===== */
@@ -152,14 +152,14 @@ body::after{
 .lock-icon-wrap.locked{border-color:var(--red);box-shadow:0 0 12px rgba(255,23,68,0.3);}
 .lock-icon-wrap.unlocked{border-color:var(--green);box-shadow:0 0 12px rgba(0,230,118,0.3);}
 .lock-icon-wrap svg{width:32px;height:32px;transition:all 0.3s ease;}
-.lock-status-text{font-size:15px;letter-spacing:2px;transition:all 0.3s ease;}
+.lock-status-text{font-size:15px;font-weight:700;letter-spacing:2px;transition:all 0.3s ease;}
 .child-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:#0d0d1a;margin-bottom:8px;transition:all 0.3s ease;}
 .child-row.on{border-color:#00e676;box-shadow:0 0 6px rgba(0,230,118,0.2);}
 .child-icon{font-size:20px;color:var(--text-dim);transition:all 0.3s ease;}
 .child-row.on .child-icon{color:var(--amber);}
-.child-label{font-size:14px;letter-spacing:1.5px;color:var(--text-dim);flex:1;}
+.child-label{font-size:14px;font-weight:700;letter-spacing:1.5px;color:var(--text-dim);flex:1;}
 .child-row.on .child-label{color:var(--text-bright);}
-.child-state{font-size:14px;letter-spacing:1px;color:var(--text-dim);}
+.child-state{font-size:14px;font-weight:700;letter-spacing:1px;color:var(--text-dim);}
 .child-row.on .child-state{color:var(--amber);}
 #car-view{width:100%;display:flex;justify-content:center;}
 
@@ -254,39 +254,30 @@ body::after{
 .log-entry.cleared{color:#66aa66;}
 .log-entry.cmd{color:#88aacc;}
 
-/* ===== MANUAL FRAME COLLAPSE ===== */
-.manual-frame-section{flex-shrink:0;}
-.mf-toggle{
-  display:flex;align-items:center;gap:8px;padding:6px 8px;
-  border:1px solid var(--border);border-radius:2px;background:#0d0d1a;
-  cursor:pointer;width:100%;outline:none;
-  font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;color:var(--text-mid);
-  -webkit-appearance:none;min-height:34px;
-}
-.mf-toggle-arrow{margin-left:auto;transition:transform 0.2s;font-size:10px;}
-.mf-toggle.open .mf-toggle-arrow{transform:rotate(180deg);}
+/* ===== MANUAL FRAME SECTION (always visible below log) ===== */
+.manual-frame-section{flex-shrink:0;border-top:1px solid var(--border);padding-top:7px;margin-top:2px;}
+.mf-header-label{font-size:9px;letter-spacing:2.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;}
 
-.mf-body{
-  display:none;padding:8px 0 0 0;
-}
-.mf-body.open{display:flex;gap:8px;}
-
+/* two sections side-by-side */
+.mf-panels{display:flex;gap:8px;}
 .frame-builder{flex:1;min-width:0;}
-.fb-title{font-size:9px;letter-spacing:2px;color:var(--blue);margin-bottom:6px;text-transform:uppercase;}
+.fb-title{font-size:9px;letter-spacing:2px;color:var(--blue);margin-bottom:5px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:3px;}
 .fb-row{display:flex;align-items:center;gap:4px;margin-bottom:4px;}
-.fb-label{font-size:9px;letter-spacing:1px;color:var(--text-dim);width:28px;flex-shrink:0;}
+.fb-label{font-size:9px;letter-spacing:1px;color:var(--text-dim);width:24px;flex-shrink:0;}
 select.fb-select,input.fb-hex{
   background:#070710;border:1px solid var(--border);border-radius:2px;
   color:var(--text-bright);font-family:'Orbitron',monospace;font-size:9px;
   padding:3px 4px;outline:none;-webkit-appearance:none;
 }
-select.fb-select{flex:1;}
+select.fb-select{flex:1;width:100%;}
 input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
+/* horizontal bytes row */
+.fb-bytes-row{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
+.fb-bytes-lblrow{display:flex;align-items:center;gap:3px;margin-bottom:4px;padding-left:0;}
 .fb-live{
   background:#070710;border:1px solid var(--border);border-radius:2px;
-  padding:4px 6px;font-size:9px;letter-spacing:1.5px;color:var(--cyan);
-  margin-bottom:4px;white-space:nowrap;overflow:hidden;min-height:22px;
+  padding:4px 6px;font-size:8px;letter-spacing:1px;color:var(--cyan);
+  margin-bottom:4px;white-space:nowrap;overflow:hidden;min-height:20px;
   font-family:'Orbitron',monospace;
 }
 .fb-send{
@@ -294,9 +285,22 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
   background:rgba(0,212,255,0.06);color:var(--cyan);
   font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
   letter-spacing:1.5px;cursor:pointer;outline:none;-webkit-appearance:none;
-  min-height:28px;
+  min-height:26px;transition:background 0.15s,box-shadow 0.15s;
 }
-.fb-divider{width:1px;background:var(--border);flex-shrink:0;}
+.fb-send:active{background:rgba(0,212,255,0.18);box-shadow:0 0 8px rgba(0,212,255,0.35);}
+.fb-send.lin-send{border-color:var(--amber);color:var(--amber);background:rgba(255,140,0,0.06);}
+.fb-send.lin-send:active{background:rgba(255,140,0,0.18);box-shadow:0 0 8px rgba(255,140,0,0.35);}
+.fb-divider{width:1px;background:var(--border);flex-shrink:0;align-self:stretch;}
+.fb-toggle-btn{flex:1;padding:3px 4px;border:1px solid var(--border);border-radius:2px;background:#0d0d1a;color:var(--text-dim);font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;outline:none;-webkit-appearance:none;transition:all 0.15s;}
+.fb-toggle-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,0.08);}
+input.fb-hex.locked{background:#111120;color:var(--text-dim);border-color:#1a1a28;cursor:not-allowed;font-size:7px;letter-spacing:0.3px;}
+.byte-lbl{width:26px;text-align:center;font-size:7px;letter-spacing:0.5px;color:var(--text-dim);font-family:'Orbitron',monospace;}
+.byte-lbl.locked-lbl{color:#2a2a40;}
+/* byte flash on send */
+@keyframes byte-flash{0%{background:#1a3a1a;border-color:var(--cyan);box-shadow:0 0 6px var(--cyan);}100%{background:#070710;border-color:var(--border);box-shadow:none;}}
+input.fb-hex.flash{animation:byte-flash 0.4s ease-out;}
+@keyframes byte-flash-lin{0%{background:#2a1a00;border-color:var(--amber);box-shadow:0 0 6px var(--amber);}100%{background:#070710;border-color:var(--border);box-shadow:none;}}
+input.fb-hex.flash-lin{animation:byte-flash-lin 0.4s ease-out;}
 </style>
 </head>
 <body>
@@ -489,70 +493,97 @@ input.fb-hex{width:26px;text-align:center;letter-spacing:1px;}
         </button>
       </div>
 
-      <!-- RIGHT: LOG + MANUAL FRAME -->
+      <!-- RIGHT: LOG + MANUAL FRAME (always visible) -->
       <div class="fi-right">
         <div class="fault-log-section">
           <div class="fault-log-label">&#9654; Active Faults Log</div>
-          <div id="fault-log"><span style="color:#2a2a40;font-size:9px;">— NO EVENTS —</span></div>
+          <div id="fault-log"><span style="color:#2a2a40;font-size:9px;">â€” NO EVENTS â€”</span></div>
         </div>
 
-        <!-- MANUAL FRAME INJECTION (collapsible) -->
+        <!-- MANUAL FRAME INJECTION (always visible, side-by-side) -->
         <div class="manual-frame-section">
-          <button class="mf-toggle" id="mf-toggle-btn" onclick="toggleManualFrame()">
-            &#9671; MANUAL FRAME INJECTION
-            <span class="mf-toggle-arrow">&#9660;</span>
-          </button>
-          <div class="mf-body" id="mf-body">
-            <!-- LIN Frame Builder -->
+          <div class="mf-header-label">&#9671; MANUAL FRAME INJECTION</div>
+          <div class="mf-panels">
+
+            <!-- LIN FRAME BUILDER -->
             <div class="frame-builder">
               <div class="fb-title">&#9135; LIN FRAME</div>
+              <!-- ID row -->
               <div class="fb-row">
                 <span class="fb-label">ID</span>
                 <select class="fb-select" id="lin-id">
-                  <option value="0x12">0x12 — WBP</option>
-                  <option value="0x14">0x14 — LSN</option>
-                  <option value="0x3D">0x3D — Diag</option>
-                  <option value="0x3E">0x3E — WBP Diag</option>
+                  <option value="0x12">0x12 â€” WBP</option>
+                  <option value="0x14">0x14 â€” LSN</option>
+                  <option value="0x3D">0x3D â€” Diag</option>
+                  <option value="0x3E">0x3E â€” WBP Diag</option>
                 </select>
               </div>
-              <div class="fb-row" style="flex-wrap:wrap;gap:3px;">
-                <span class="fb-label">DATA</span>
+              <!-- bytes row -->
+              <div class="fb-bytes-row">
                 <input class="fb-hex" id="lin-d0" maxlength="2" placeholder="00" oninput="updateLinFrame()">
                 <input class="fb-hex" id="lin-d1" maxlength="2" placeholder="00" oninput="updateLinFrame()">
                 <input class="fb-hex" id="lin-d2" maxlength="2" placeholder="00" oninput="updateLinFrame()">
                 <input class="fb-hex" id="lin-d3" maxlength="2" placeholder="00" oninput="updateLinFrame()">
                 <input class="fb-hex" id="lin-d4" maxlength="2" placeholder="00" oninput="updateLinFrame()">
               </div>
+              <!-- label row -->
+              <div class="fb-bytes-lblrow">
+                <span class="byte-lbl">D0</span>
+                <span class="byte-lbl">D1</span>
+                <span class="byte-lbl">D2</span>
+                <span class="byte-lbl">D3</span>
+                <span class="byte-lbl">D4</span>
+              </div>
+              <!-- repeat row -->
+              <div class="fb-row" style="margin-bottom:4px;">
+                <span class="fb-label">RPT</span>
+                <input class="fb-hex" id="lin-repeat" maxlength="2" placeholder="5" style="width:32px;">
+              </div>
+              <!-- live preview -->
               <div class="fb-live" id="lin-live">ID:0x12 [ 00 00 00 00 00 ]</div>
-              <button class="fb-send" onclick="sendLinFrame()">&#11208; SEND LIN FRAME</button>
+              <!-- send button -->
+              <button class="fb-send lin-send" onclick="sendLinFrame()">&#11208; SEND LIN FRAME</button>
             </div>
+
             <div class="fb-divider"></div>
-            <!-- CAN Frame Builder -->
+
+            <!-- CAN FRAME BUILDER -->
             <div class="frame-builder">
               <div class="fb-title">&#9135; CAN FRAME</div>
-              <div class="fb-row">
-                <span class="fb-label">ID</span>
-                <input class="fb-hex" id="can-id" maxlength="4" placeholder="0103" style="width:44px;" oninput="updateCanFrame()">
+              <!-- ID selector row -->
+              <div class="fb-row" style="gap:4px;margin-bottom:5px;">
+                <button class="fb-toggle-btn active" id="can-sel-102" onclick="selectCanFrame('102')">0x102</button>
+                <button class="fb-toggle-btn" id="can-sel-103" onclick="selectCanFrame('103')">0x103</button>
+                <span id="can-frame-label" style="font-size:8px;color:var(--cyan);letter-spacing:1px;white-space:nowrap;">LIGHT_CMD</span>
               </div>
-              <div class="fb-row" style="flex-wrap:wrap;gap:3px;">
-                <span class="fb-label">D0-3</span>
-                <input class="fb-hex" id="can-d0" maxlength="2" placeholder="00" oninput="updateCanFrame()">
-                <input class="fb-hex" id="can-d1" maxlength="2" placeholder="00" oninput="updateCanFrame()">
+              <!-- bytes row -->
+              <div class="fb-bytes-row">
+                <input class="fb-hex locked" id="can-d0" maxlength="2" placeholder="--" disabled>
+                <input class="fb-hex locked" id="can-d1" maxlength="2" placeholder="--" disabled>
                 <input class="fb-hex" id="can-d2" maxlength="2" placeholder="00" oninput="updateCanFrame()">
                 <input class="fb-hex" id="can-d3" maxlength="2" placeholder="00" oninput="updateCanFrame()">
-              </div>
-              <div class="fb-row" style="flex-wrap:wrap;gap:3px;">
-                <span class="fb-label">D4-7</span>
                 <input class="fb-hex" id="can-d4" maxlength="2" placeholder="00" oninput="updateCanFrame()">
                 <input class="fb-hex" id="can-d5" maxlength="2" placeholder="00" oninput="updateCanFrame()">
                 <input class="fb-hex" id="can-d6" maxlength="2" placeholder="00" oninput="updateCanFrame()">
-                <input class="fb-hex" id="can-d7" maxlength="2" placeholder="00" oninput="updateCanFrame()">
               </div>
-              <div class="fb-live" id="can-live">ID:0x0103 [ 00 00 00 00 00 00 00 00 ]</div>
+              <!-- label row -->
+              <div class="fb-bytes-lblrow">
+                <span class="byte-lbl locked-lbl" id="lbl-d0">CRC</span>
+                <span class="byte-lbl locked-lbl" id="lbl-d1">SEQ</span>
+                <span class="byte-lbl" id="lbl-d2">D2</span>
+                <span class="byte-lbl" id="lbl-d3">D3</span>
+                <span class="byte-lbl" id="lbl-d4">D4</span>
+                <span class="byte-lbl" id="lbl-d5">D5</span>
+                <span class="byte-lbl" id="lbl-d6">D6</span>
+              </div>
+              <!-- live preview -->
+              <div class="fb-live" id="can-live">0x0102 [ AUTO AUTO 00 00 00 00 00 ]</div>
+              <!-- send button -->
               <button class="fb-send" onclick="sendCanFrame()">&#11208; SEND CAN FRAME</button>
             </div>
-          </div>
-        </div>
+
+          </div><!-- end mf-panels -->
+        </div><!-- end manual-frame-section -->
       </div>
     </div>
   </div>
@@ -651,15 +682,15 @@ function setFaultVisual(id, active){
 function toggleFault(id){
   try{
     if(activeFaults[id]){
-      // Already active — clear this fault
+      // Already active â€” clear this fault
       activeFaults[id]=false;
       setFaultVisual(id, false);
-      appendLog(faultTimestamp()+' F'+id+' CLEARED — '+FAULT_NAMES[id], 'cleared');
+      appendLog(faultTimestamp()+' F'+id+' CLEARED â€” '+FAULT_NAMES[id], 'cleared');
       sendCmd({cmd:'clear_fault',fault_id:id});
     }else{
       activeFaults[id]=true;
       setFaultVisual(id, true);
-      appendLog(faultTimestamp()+' F'+id+' INJECTED — '+FAULT_NAMES[id], 'injected');
+      appendLog(faultTimestamp()+' F'+id+' INJECTED â€” '+FAULT_NAMES[id], 'injected');
       sendCmd({cmd:'inject_fault',fault_id:id});
     }
   }catch(e){}
@@ -678,21 +709,9 @@ function clearAllFaults(){
     if(anyActive){
       appendLog(faultTimestamp()+' ALL FAULTS CLEARED', 'cleared');
     }else{
-      appendLog(faultTimestamp()+' CLEAR ALL — no active faults', 'cmd');
+      appendLog(faultTimestamp()+' CLEAR ALL â€” no active faults', 'cmd');
     }
     sendCmd({cmd:'clear_all_faults'});
-  }catch(e){}
-}
-
-// ---- MANUAL FRAME COLLAPSE ----
-var mfOpen=false;
-function toggleManualFrame(){
-  try{
-    mfOpen=!mfOpen;
-    var body=document.getElementById('mf-body');
-    var toggle=document.getElementById('mf-toggle-btn');
-    if(mfOpen){body.classList.add('open');toggle.classList.add('open');}
-    else{body.classList.remove('open');toggle.classList.remove('open');}
   }catch(e){}
 }
 
@@ -712,39 +731,111 @@ function updateLinFrame(){
 document.getElementById('lin-id').addEventListener('change',updateLinFrame);
 updateLinFrame();
 
+function flashBytes(ids, cls){
+  ids.forEach(function(id){
+    try{
+      var el=document.getElementById(id);
+      if(!el||el.disabled)return;
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+      setTimeout(function(){el.classList.remove(cls);},400);
+    }catch(e){}
+  });
+}
+
 function sendLinFrame(){
   try{
     var fid=(document.getElementById('lin-id')||{}).value||'0x12';
-    var bytes=[getHex('lin-d0'),getHex('lin-d1'),getHex('lin-d2'),getHex('lin-d3'),getHex('lin-d4')];
-    var data=bytes.map(function(b){return parseInt(b,16);});
-    sendCmd({cmd:'send_lin_frame',frame_id:fid,data:data});
-    appendLog(faultTimestamp()+' LIN TX '+fid+' [ '+bytes.join(' ')+' ]', 'cmd');
+    var b=[getHex('lin-d0'),getHex('lin-d1'),getHex('lin-d2'),getHex('lin-d3'),getHex('lin-d4')];
+    var repeat=parseInt((document.getElementById('lin-repeat')||{}).value||'5')||5;
+    var data=b.map(function(x){return parseInt(x,16);});
+    sendCmd({cmd:'send_lin_frame',frame_id:fid,data:data,repeat:repeat});
+    appendLog(faultTimestamp()+' LIN TX '+fid+' [ '+b.join(' ')+' ] x'+repeat,'cmd');
+    flashBytes(['lin-d0','lin-d1','lin-d2','lin-d3','lin-d4'],'flash-lin');
   }catch(e){}
 }
 
 // ---- CAN FRAME BUILDER ----
+var currentCanFrame='102';
+
+function selectCanFrame(id){
+  try{
+    currentCanFrame=id;
+    document.getElementById('can-sel-102').classList.toggle('active',id==='102');
+    document.getElementById('can-sel-103').classList.toggle('active',id==='103');
+    var lbl=document.getElementById('can-frame-label');
+    if(lbl)lbl.textContent=id==='102'?'LIGHT_CMD':'WINDOW_CMD';
+    var d0=document.getElementById('can-d0');
+    var d1=document.getElementById('can-d1');
+    var l0=document.getElementById('lbl-d0');
+    var l1=document.getElementById('lbl-d1');
+    if(id==='102'){
+      // D0=CRC locked, D1=SEQ locked, D2-D6 editable
+      if(d0){d0.disabled=true;d0.classList.add('locked');d0.value='';d0.placeholder='--';}
+      if(d1){d1.disabled=true;d1.classList.add('locked');d1.value='';d1.placeholder='--';}
+      if(l0){l0.textContent='CRC';l0.classList.add('locked-lbl');}
+      if(l1){l1.textContent='SEQ';l1.classList.add('locked-lbl');}
+      ['can-d2','can-d3','can-d4','can-d5','can-d6'].forEach(function(x){
+        var e=document.getElementById(x);if(e){e.disabled=false;e.classList.remove('locked');e.placeholder='00';}
+      });
+      ['lbl-d2','lbl-d3','lbl-d4','lbl-d5','lbl-d6'].forEach(function(x,i){
+        var e=document.getElementById(x);if(e){e.textContent='D'+(i+2);e.classList.remove('locked-lbl');}
+      });
+    }else{
+      // D0-D1 editable, D2-D6 locked to 00
+      if(d0){d0.disabled=false;d0.classList.remove('locked');d0.placeholder='00';}
+      if(d1){d1.disabled=false;d1.classList.remove('locked');d1.placeholder='00';}
+      if(l0){l0.textContent='D0';l0.classList.remove('locked-lbl');}
+      if(l1){l1.textContent='D1';l1.classList.remove('locked-lbl');}
+      ['can-d2','can-d3','can-d4','can-d5','can-d6'].forEach(function(x){
+        var e=document.getElementById(x);if(e){e.disabled=true;e.classList.add('locked');e.value='00';e.placeholder='00';}
+      });
+      ['lbl-d2','lbl-d3','lbl-d4','lbl-d5','lbl-d6'].forEach(function(x){
+        var e=document.getElementById(x);if(e){e.classList.add('locked-lbl');}
+      });
+    }
+    updateCanFrame();
+  }catch(e){}
+}
+
 function updateCanFrame(){
   try{
-    var rawId=(document.getElementById('can-id')||{}).value||'0103';
-    var idStr='0x'+rawId.toUpperCase().padStart(4,'0');
-    var bytes=['can-d0','can-d1','can-d2','can-d3','can-d4','can-d5','can-d6','can-d7'].map(getHex);
-    document.getElementById('can-live').textContent='ID:'+idStr+' [ '+bytes.join(' ')+' ]';
+    var id=currentCanFrame||'102';
+    var canId='0x0'+id;
+    if(id==='102'){
+      var b=['can-d2','can-d3','can-d4','can-d5','can-d6'].map(getHex);
+      document.getElementById('can-live').textContent=canId+' [ AUTO AUTO '+b.join(' ')+' ]';
+    }else{
+      var b0=getHex('can-d0');var b1=getHex('can-d1');
+      document.getElementById('can-live').textContent=canId+' [ '+b0+' '+b1+' 00 00 00 00 00 ]';
+    }
   }catch(e){}
 }
 updateCanFrame();
 
 function sendCanFrame(){
   try{
-    var rawId=(document.getElementById('can-id')||{}).value||'0103';
-    var canId='0x'+rawId.toUpperCase();
-    var ids=['can-d0','can-d1','can-d2','can-d3','can-d4','can-d5','can-d6','can-d7'];
-    var bytes=ids.map(getHex);
-    var data=bytes.map(function(b){return parseInt(b,16);});
+    var id=currentCanFrame||'102';
+    var canId='0x0'+id;
+    var data;
+    var flashIds;
+    if(id==='102'){
+      var b=['can-d2','can-d3','can-d4','can-d5','can-d6'].map(getHex);
+      data=[0,0].concat(b.map(function(x){return parseInt(x,16);}));
+      appendLog(faultTimestamp()+' CAN TX '+canId+' D2-D6: '+b.join(' '),'cmd');
+      flashIds=['can-d2','can-d3','can-d4','can-d5','can-d6'];
+    }else{
+      var b0=parseInt(getHex('can-d0'),16);
+      var b1=parseInt(getHex('can-d1'),16);
+      data=[b0,b1,0,0,0,0,0];
+      appendLog(faultTimestamp()+' CAN TX '+canId+' [ '+getHex('can-d0')+' '+getHex('can-d1')+' 00 00 00 00 00 ]','cmd');
+      flashIds=['can-d0','can-d1'];
+    }
     sendCmd({cmd:'send_can_frame',can_id:canId,data:data});
-    appendLog(faultTimestamp()+' CAN TX '+canId+' [ '+bytes.join(' ')+' ]', 'cmd');
+    flashBytes(flashIds,'flash');
   }catch(e){}
 }
-
 // ---- WEBSOCKET: STATE PORT 8765 ----
 var WIN_ICONS=['\u2014','\u2191','\u2193'];
 var WIN_DIRS=['STOP','UP','DOWN'];
@@ -824,11 +915,11 @@ function updateDashboard(state){
         if(!d) return;
         var isOpen=doorOpenMap[id];
         if(isOpen){
-          // Door open — green
+          // Door open â€” green
           d.setAttribute('fill','rgba(0,230,118,0.25)');
           d.setAttribute('stroke','#00e676');
         } else {
-          // Door closed — red
+          // Door closed â€” red
           d.setAttribute('fill','rgba(255,23,68,0.18)');
           d.setAttribute('stroke','#ff1744');
         }

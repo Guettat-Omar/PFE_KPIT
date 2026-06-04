@@ -137,7 +137,8 @@ def main():
         init_lin_master('/dev/serial0')
         cmd_server.set_hardware(
             send_lin=send_frame,
-            send_can=send
+            send_can=send,
+            get_seq_counter=lambda: (gw.seq_counter - 1) % 16
         )
     else:
         logger.warning("Simulation Mode: Hardware buses skipped.")
@@ -189,8 +190,9 @@ def main():
 
             is_flashing = flash_timer.update()  # sample flash state just before encoding
             if HARDWARE_AVAILABLE:
-                lsn_payload = None if fault_injector.is_active(F2_LSN_TIMEOUT) else request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
-                raw_wbp = None if fault_injector.is_active(F1_WBP_TIMEOUT) else request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
+                lin_frozen = fault_injector.lin_freeze.is_set()
+                lsn_payload = None if (fault_injector.is_active(F2_LSN_TIMEOUT) or lin_frozen) else request_frame(LSN_FRAME_ID, LSN_PAYLOAD_LEN)
+                raw_wbp = None if (fault_injector.is_active(F1_WBP_TIMEOUT) or lin_frozen) else request_frame(WBP_FRAME_ID, WBP_PAYLOAD_LEN)
     
                 lsn_valid = lsn_payload is not None and len(lsn_payload) > 0
                 wbp_payload = wbp_monitor.update(raw_wbp)
@@ -220,7 +222,9 @@ def main():
                         can_payload = bytes(can_payload)
                         logger.warning("[FAULT] F3: CAN E2E CRC corrupted")
 
-                    if can_payload:
+                    if fault_injector.can_freeze.is_set():
+                        logging.getLogger("CAN").warning("CAN FROZEN  skipping LIGHT_CMD")
+                    elif can_payload:
                         can_id = gw.light_cmd_msg.frame_id
                         send(can_id, list(can_payload))
                         logging.getLogger("CAN").info(f"TX ID=0x{can_id:03X} data={bytes(can_payload).hex()}")

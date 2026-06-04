@@ -3,7 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Fault IDs — must match the dashboard HTML exactly
+# Fault IDs  must match the dashboard HTML exactly
 F1_WBP_TIMEOUT   = 1   # Simulate WBP node not responding
 F2_LSN_TIMEOUT   = 2   # Simulate LSN node not responding
 F3_CAN_E2E_ERROR = 3   # Corrupt CRC byte on LIGHT_CMD
@@ -22,6 +22,8 @@ class FaultInjector:
 
     def __init__(self):
         self._lock = threading.Lock()
+        self.lin_freeze = threading.Event()
+        self.can_freeze = threading.Event()
         # One boolean flag per fault. False = inactive, True = active.
         self._faults: dict[int, bool] = {
             F1_WBP_TIMEOUT:   False,
@@ -38,7 +40,7 @@ class FaultInjector:
                 logger.warning(f"[FAULT] Unknown fault ID: {fault_id}")
                 return False
             self._faults[fault_id] = True
-            logger.warning(f"[FAULT] F{fault_id} INJECTED — {self._name(fault_id)}")
+            logger.warning(f"[FAULT] F{fault_id} INJECTED  {self._name(fault_id)}")
             return True
 
     def clear(self, fault_id: int) -> bool:
@@ -47,7 +49,7 @@ class FaultInjector:
             if fault_id not in self._faults:
                 return False
             self._faults[fault_id] = False
-            logger.info(f"[FAULT] F{fault_id} CLEARED — {self._name(fault_id)}")
+            logger.info(f"[FAULT] F{fault_id} CLEARED  {self._name(fault_id)}")
             return True
 
     def clear_all(self):

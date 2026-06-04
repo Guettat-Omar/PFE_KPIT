@@ -30,11 +30,13 @@ class CmdServer:
         # These are set by main.py after hardware is initialized
         self._send_lin = None   # function: send_lin(frame_id, data)
         self._send_can = None   # function: send_can(arb_id, data)
+        self._get_seq_counter = None  # function that returns current BCM seq counter
 
-    def set_hardware(self, send_lin, send_can):
+    def set_hardware(self, send_lin, send_can, get_seq_counter=None):
         """Called by main.py once hardware is ready."""
         self._send_lin = send_lin
         self._send_can = send_can
+        self._get_seq_counter = get_seq_counter
 
     def start(self):
         """Start WebSocket server in a background thread."""
@@ -71,6 +73,7 @@ class CmdServer:
         """Parse a command and act on it."""
         try:
             msg = json.loads(raw_msg)
+            logger.warning(f"[CMD] Received: {msg}")
         except json.JSONDecodeError:
             logger.warning(f"[CMD] Invalid JSON: {raw_msg}")
             return
@@ -103,15 +106,48 @@ class CmdServer:
             if self._send_lin:
                 frame_id = int(msg.get("frame_id", "0x12"), 16)
                 data = bytes(msg.get("data", []))
-                self._send_lin(frame_id, data)
-                logger.info(f"[CMD] Manual LIN TX ID={hex(frame_id)} data={data.hex()}")
+                repeat = int(msg.get("repeat", 5))  # send 5 times by default
+                # Freeze LIN scheduler
+                self._fi.lin_freeze.set()
+                await asyncio.sleep(0.025)  # wait for current cycle to finish
+                # Send frame multiple times to ensure motor moves
+                for _ in range(repeat):
+                    self._send_lin(frame_id, data)
+                    await asyncio.sleep(0.012)  # 12ms between frames
+                self._fi.lin_freeze.clear()
+                logger.warning(f"[CMD] Manual LIN TX ID={hex(frame_id)} data={data.hex()} x{repeat}")
+            else:
+                logger.warning("[CMD] send_lin is None  set_hardware() was not called")
 
         elif cmd == "send_can_frame":
             if self._send_can:
                 can_id = int(msg.get("can_id", "0x102"), 16)
                 data = msg.get("data", [])
+                if can_id == 0x102 and len(data) == 8:
+                    data = data[:7]
+                # For LIGHT_CMD — patch sequence counter to match BCM's current counter
+                if can_id == 0x102 and len(data) == 7 and self._get_seq_counter:
+                    current_seq = self._get_seq_counter()
+                    next_seq = (current_seq + 1) % 16
+                    # Reverse to find seq byte position
+                    # In reversed payload: seq is at index 5 (original index 1 after reversal)
+                    # Recalculate CRC with new seq
+                    from bcm.utils.crc import calculate_crc8
+                    # Un-reverse to get original order
+                    original = list(reversed(data))
+                    original[5] = next_seq  # seq counter at index 5
+                    new_crc = calculate_crc8(bytes(original[:6]))
+                    original[6] = new_crc
+                    # Re-reverse
+                    data = list(reversed(original))
+                # Freeze BCM CAN output
+                if can_id == 0x102:
+                    self._fi.can_freeze.set()
+                    await asyncio.sleep(0.050)
                 self._send_can(can_id, data)
-                logger.info(f"[CMD] Manual CAN TX ID={hex(can_id)} data={bytes(data).hex()}")
-
+                logger.warning(f"[CMD] Manual CAN TX ID={hex(can_id)} data={bytes(data).hex()}")
+                if can_id == 0x102:
+                    await asyncio.sleep(0.100)
+                    self._fi.can_freeze.clear()
         else:
             logger.warning(f"[CMD] Unknown command: {cmd}")
