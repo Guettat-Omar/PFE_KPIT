@@ -25,13 +25,13 @@ void set_motor(int pin_en, int pin_in1, int pin_in2, uint8_t command)
     {
         digitalWrite(pin_in1, HIGH);
         digitalWrite(pin_in2, LOW);
-        analogWrite(pin_en, 200);
+        analogWrite(pin_en, 255);
     }
     else if (command == CMD_DOWN)
     {
         digitalWrite(pin_in1, LOW);
         digitalWrite(pin_in2, HIGH);
-        analogWrite(pin_en, 200);
+        analogWrite(pin_en, 255);
     }
     else
     { // CMD_STOP

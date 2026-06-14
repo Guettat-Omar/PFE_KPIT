@@ -837,8 +837,8 @@ function sendCanFrame(){
   }catch(e){}
 }
 // ---- WEBSOCKET: STATE PORT 8765 ----
-var WIN_ICONS=['\u2014','\u2191','\u2193'];
-var WIN_DIRS=['STOP','UP','DOWN'];
+var WIN_ICONS=['\u2014','\u2191','\u2193','\u21c8','\u21ca'];
+var WIN_DIRS=['STOP','UP','DOWN','UP AUTO','DOWN AUTO'];
 
 function updateDashboard(state){
   try{
@@ -877,7 +877,7 @@ function updateDashboard(state){
         var ico=document.getElementById('win-'+w+'-icon');
         var dir=document.getElementById('win-'+w+'-dir');
         if(!cell)return;
-        var moving=(v===1||v===2);
+        var moving=(v===1||v===2||v===3||v===4);
         if(moving){cell.classList.add('moving');}else{cell.classList.remove('moving');}
         if(ico)ico.textContent=WIN_ICONS[v]||'\u2014';
         if(dir)dir.textContent=WIN_DIRS[v]||'STOP';
