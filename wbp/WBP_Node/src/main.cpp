@@ -2,239 +2,199 @@
 #include "lin_slave.h"
 
 // ── External variables from lin_slave.cpp ────────────────────
-extern volatile uint8_t window_states[5]; // Increased to 5 bytes to hold Door/Child locks
-// ← ADD THESE TWO LINES at the top of main.cpp
+extern volatile uint8_t window_states[5];
+
 volatile bool break_received_flag = false;
 volatile bool response_sent_flag = false;
 
 // ── Pin definitions ──────────────────────────────────────────
-#define LED_BREAK 4         // RED    — BREAK received
-#define LED_SYNC 5          // YELLOW — SYNC received
-#define LED_RESPONSE 6      // GREEN  — response sent
-#define BTN_CHILD_SAFETY A4 // Child Safety Switch
-#define BTN_DOOR_LOCK A5    // Door Lock Switch
+#define LED_BREAK      4
+#define LED_SYNC       5
+#define LED_RESPONSE   6
+#define BTN_CHILD_SAFETY A4
+#define BTN_DOOR_LOCK    A5
+
+// ── Door lock ADC thresholds ─────────────────────────────────
+#define DOOR_UNLOCK_MAX  35
+#define DOOR_LOCK_MIN    35
+#define DOOR_LOCK_MAX    200
+#define CHILD_PRESSED_MAX 200
+
+// ── Door lock states ─────────────────────────────────────────
+#define DOOR_IDLE    0
+#define DOOR_LOCK    1
+#define DOOR_UNLOCK  2
 
 // ── ADC pins ─────────────────────────────────────────────────
 const uint8_t ADC_PINS[4] = {A0, A1, A2, A3};
 windowState pending_state[4] = {windowState::WINDOW_OFF};
 uint8_t debounce_count[4] = {0};
-const uint8_t DEBOUNCE_THRESHOLD = 100; // Increased to 100ms to eliminate ANY button noise
+const uint8_t DEBOUNCE_THRESHOLD = 150;
 
-// ── Digital button debounce (door lock / child safety) ───────
-uint8_t btn_debounce_count[2] = {0}; // [0]=door_lock, [1]=child_safety
-bool btn_stable[2] = {false, false};
+// ── Door lock debounce ───────────────────────────────────────
+uint8_t door_pending_state   = DOOR_IDLE;
+uint8_t door_stable_state    = DOOR_IDLE;
+uint8_t door_debounce_count  = 0;
+uint8_t door_last_sent       = DOOR_IDLE; // track last sent state
+
+// ── Child safety debounce ────────────────────────────────────
+uint8_t child_debounce_count = 0;
+bool    child_stable         = false;
+bool    child_pending        = false;
 
 // ── Timers ───────────────────────────────────────────────────
 unsigned long last_sample_time = 0;
 
 // ── Helpers ──────────────────────────────────────────────────
-void all_leds(bool on)
-{
-    digitalWrite(LED_BREAK, on);
-    digitalWrite(LED_SYNC, on);
+void all_leds(bool on) {
+    digitalWrite(LED_BREAK,    on);
+    digitalWrite(LED_SYNC,     on);
     digitalWrite(LED_RESPONSE, on);
 }
 
-void reset_leds()
-{
-    digitalWrite(LED_BREAK, LOW);
-    digitalWrite(LED_SYNC, LOW);
+void reset_leds() {
+    digitalWrite(LED_BREAK,    LOW);
+    digitalWrite(LED_SYNC,     LOW);
     digitalWrite(LED_RESPONSE, LOW);
 }
 
 // ── Startup pattern ──────────────────────────────────────────
-void startup_sequence()
-{
-    // Phase 1 — all ON together 1 second
-    all_leds(true);
-    delay(1000);
-    all_leds(false);
-    delay(200);
-
-    // Phase 2 — chase RED → YELLOW → GREEN × 3
-    for (int r = 0; r < 3; r++)
-    {
-        digitalWrite(LED_BREAK, HIGH);
-        delay(150);
-        digitalWrite(LED_BREAK, LOW);
-        digitalWrite(LED_SYNC, HIGH);
-        delay(150);
-        digitalWrite(LED_SYNC, LOW);
-        digitalWrite(LED_RESPONSE, HIGH);
-        delay(150);
-        digitalWrite(LED_RESPONSE, LOW);
+void startup_sequence() {
+    all_leds(true);  delay(1000); all_leds(false); delay(200);
+    for (int r = 0; r < 3; r++) {
+        digitalWrite(LED_BREAK, HIGH); delay(150); digitalWrite(LED_BREAK, LOW);
+        digitalWrite(LED_SYNC,  HIGH); delay(150); digitalWrite(LED_SYNC,  LOW);
+        digitalWrite(LED_RESPONSE, HIGH); delay(150); digitalWrite(LED_RESPONSE, LOW);
         delay(100);
     }
-
-    // Phase 3 — chase GREEN → YELLOW → RED × 3
-    for (int r = 0; r < 3; r++)
-    {
-        digitalWrite(LED_RESPONSE, HIGH);
-        delay(150);
-        digitalWrite(LED_RESPONSE, LOW);
-        digitalWrite(LED_SYNC, HIGH);
-        delay(150);
-        digitalWrite(LED_SYNC, LOW);
-        digitalWrite(LED_BREAK, HIGH);
-        delay(150);
-        digitalWrite(LED_BREAK, LOW);
+    for (int r = 0; r < 3; r++) {
+        digitalWrite(LED_RESPONSE, HIGH); delay(150); digitalWrite(LED_RESPONSE, LOW);
+        digitalWrite(LED_SYNC,     HIGH); delay(150); digitalWrite(LED_SYNC,     LOW);
+        digitalWrite(LED_BREAK,    HIGH); delay(150); digitalWrite(LED_BREAK,    LOW);
         delay(100);
     }
-
-    // Phase 4 — all fast blink × 5
-    for (int i = 0; i < 5; i++)
-    {
-        all_leds(true);
-        delay(80);
-        all_leds(false);
-        delay(80);
-    }
-
-    // Phase 5 — light one by one and stay ON
+    for (int i = 0; i < 5; i++) { all_leds(true); delay(80); all_leds(false); delay(80); }
     delay(200);
-    digitalWrite(LED_BREAK, HIGH);
-    delay(300);
-    digitalWrite(LED_SYNC, HIGH);
-    delay(300);
-    digitalWrite(LED_RESPONSE, HIGH);
-    delay(300);
-
-    // Phase 6 — all OFF = READY
-    delay(400);
-    all_leds(false);
-    delay(300);
-
-    // Phase 7 — single slow blink = listening
-    all_leds(true);
-    delay(500);
-    all_leds(false);
-    delay(500);
+    digitalWrite(LED_BREAK,    HIGH); delay(300);
+    digitalWrite(LED_SYNC,     HIGH); delay(300);
+    digitalWrite(LED_RESPONSE, HIGH); delay(300);
+    delay(400); all_leds(false); delay(300);
+    all_leds(true); delay(500); all_leds(false); delay(500);
 }
 
 // ── Setup ────────────────────────────────────────────────────
-void setup()
-{
-    pinMode(LED_BREAK, OUTPUT);
-    pinMode(LED_SYNC, OUTPUT);
+void setup() {
+    pinMode(LED_BREAK,    OUTPUT);
+    pinMode(LED_SYNC,     OUTPUT);
     pinMode(LED_RESPONSE, OUTPUT);
     pinMode(BTN_CHILD_SAFETY, INPUT_PULLUP);
-    pinMode(BTN_DOOR_LOCK, INPUT_PULLUP);
     pinMode(13, OUTPUT);
     reset_leds();
-
     startup_sequence();
-
     lin_slave_init();
 }
 
 // ── Loop ─────────────────────────────────────────────────────
-void loop()
-{
-    // ADC takes ~200ms to settle after power-on; skip sampling for 1 second
-    // to prevent startup noise from being latched into window_states and
-    // triggering spurious LIN responses that drive motors without user input.
+void loop() {
     static unsigned long ready_at = millis() + 1000;
-    if (millis() < ready_at)
-        return;
+    if (millis() < ready_at) return;
 
     unsigned long now = millis();
-
-    if (now - last_sample_time >= 1)
-    {
+    if (now - last_sample_time >= 1) {
         last_sample_time = now;
 
-        // ── Hardware Cross-Talk Protection ───────────────────────
-        // If digital buttons are currently pressed or transitioning, skip ADC updates
-        // to prevent false readings caused by breadboard ground bounce or MUX bleeding.
-        bool raw_door = !digitalRead(BTN_DOOR_LOCK);
-        bool raw_child = !digitalRead(BTN_CHILD_SAFETY);
+        // ── Door lock — ADC read on A5 ───────────────────────
+        int door_adc = analogRead(BTN_DOOR_LOCK);
+        uint8_t raw_door_state;
+        if (door_adc < DOOR_UNLOCK_MAX) {
+            raw_door_state = DOOR_UNLOCK;
+        } else if (door_adc >= DOOR_LOCK_MIN && door_adc <= DOOR_LOCK_MAX) {
+            raw_door_state = DOOR_LOCK;
+        } else {
+            raw_door_state = DOOR_IDLE;
+        }
 
-        if (!raw_door && !raw_child)
-        {
-            // Sample ADC and update window states ONLY when buttons are untouched
-            for (int i = 0; i < 4; i++)
-            {
+        // Debounce door lock
+        if (raw_door_state == door_pending_state) {
+            door_debounce_count++;
+            if (door_debounce_count >= DEBOUNCE_THRESHOLD) {
+                door_stable_state    = raw_door_state;
+                door_debounce_count  = DEBOUNCE_THRESHOLD; // clamp
+            }
+        } else {
+            door_pending_state  = raw_door_state;
+            door_debounce_count = 0;
+        }
+
+        // Encode door lock into byte 4:
+        // bit 0 = LOCK active (1 when in LOCK position)
+        // bit 1 = UNLOCK active (1 when in UNLOCK position)
+        // bit 2 = child safety
+        uint8_t door_lock_bit   = (door_stable_state == DOOR_LOCK)   ? 1 : 0;
+        uint8_t door_unlock_bit = (door_stable_state == DOOR_UNLOCK) ? 1 : 0;
+
+        // ── Child safety — digital read on A4 ───────────────
+        int child_adc = analogRead(BTN_CHILD_SAFETY);
+        bool raw_child = (child_adc < CHILD_PRESSED_MAX);
+        if (raw_child == child_pending) {
+            child_debounce_count++;
+            if (child_debounce_count >= DEBOUNCE_THRESHOLD) {
+                child_stable         = raw_child;
+                child_debounce_count = DEBOUNCE_THRESHOLD;
+            }
+        } else {
+            child_pending        = raw_child;
+            child_debounce_count = 0;
+        }
+
+        // ── Pack byte 4 ──────────────────────────────────────
+        // bit 0 = door LOCK
+        // bit 1 = door UNLOCK
+        // bit 2 = child safety
+        window_states[4] = (door_lock_bit)
+                         | (door_unlock_bit << 1)
+                         | ((uint8_t)child_stable << 7);
+        // ── Window ADC — only when door is IDLE ─────────────
+        if (door_stable_state == DOOR_IDLE && !child_stable) {
+            for (int i = 0; i < 4; i++) {
                 uint16_t adc_val;
-                if (i < 2)
-                {
+                if (i < 2) {
                     analogRead(ADC_PINS[i]);
                     analogRead(ADC_PINS[i]);
                     adc_val = analogRead(ADC_PINS[i]);
+                } else {
+                    adc_val = 1023;
                 }
-                else
-                {
-                    adc_val = 1023; // Force unconnected pins to read as 5V (WINDOW_OFF)
-                }
-
                 windowState new_state = window_switch(adc_val);
-                if (new_state == pending_state[i])
-                {
+                if (new_state == pending_state[i]) {
                     debounce_count[i]++;
-                    if (debounce_count[i] >= DEBOUNCE_THRESHOLD)
-                    {
+                    if (debounce_count[i] >= DEBOUNCE_THRESHOLD) {
                         window_states[i] = static_cast<uint8_t>(new_state);
                     }
-                }
-                else
-                {
+                } else {
                     pending_state[i] = new_state;
                     debounce_count[i] = 1;
                 }
             }
         }
 
-        // Debounced digital button reads (same 100ms threshold as ADC buttons)
-
-        if (raw_door == btn_stable[0])
-        {
-            btn_debounce_count[0] = 0;
-        }
-        else
-        {
-            btn_debounce_count[0]++;
-            if (btn_debounce_count[0] >= DEBOUNCE_THRESHOLD)
-            {
-                btn_stable[0] = raw_door;
-                btn_debounce_count[0] = 0;
-            }
-        }
-        if (raw_child == btn_stable[1])
-        {
-            btn_debounce_count[1] = 0;
-        }
-        else
-        {
-            btn_debounce_count[1]++;
-            if (btn_debounce_count[1] >= DEBOUNCE_THRESHOLD)
-            {
-                btn_stable[1] = raw_child;
-                btn_debounce_count[1] = 0;
-            }
-        }
-
-        // Pack them into the 5th byte: Bit 1 for Child Lock, Bit 0 for Door Lock
-        window_states[4] = (btn_stable[1] << 1) | (btn_stable[0] << 0);
-        // Update LEDs from ISR flags
-        if (break_received_flag)
-        {
+        // ── LED feedback ─────────────────────────────────────
+        if (break_received_flag) {
             break_received_flag = false;
-            digitalWrite(LED_BREAK, HIGH);
-            digitalWrite(LED_SYNC, LOW);
+            digitalWrite(LED_BREAK,    HIGH);
+            digitalWrite(LED_SYNC,     LOW);
             digitalWrite(LED_RESPONSE, LOW);
         }
-
-        if (response_sent_flag)
-        {
+        if (response_sent_flag) {
             response_sent_flag = false;
             digitalWrite(LED_RESPONSE, HIGH);
         }
     }
-    // Debug — blink LED 13 if any window not OFF
+
+    // Debug LED 13
     bool any_active = false;
-    for (int i = 0; i < 4; i++)
-    {
-        if (window_states[i] != 0)
-            any_active = true;
+    for (int i = 0; i < 4; i++) {
+        if (window_states[i] != 0) any_active = true;
     }
     digitalWrite(13, any_active ? HIGH : LOW);
 }
