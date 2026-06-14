@@ -161,7 +161,7 @@ void loop() {
                 analogRead(ADC_PINS[i]);
                 analogRead(ADC_PINS[i]);
                 adc_val = analogRead(ADC_PINS[i]);
-                windowState new_state = window_switch(adc_val);
+                windowState new_state = window_switch(adc_val);  
                 if (new_state == pending_state[i]) {
                     debounce_count[i]++;
                     if (debounce_count[i] >= DEBOUNCE_THRESHOLD) {
