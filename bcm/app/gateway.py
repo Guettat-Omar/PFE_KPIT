@@ -63,12 +63,10 @@ class BcmGateway:
         elif raw_door_unlock:
             self._door_locked = False
 
-        door_active = bool(wbp_lin_data[4] & 0x03)  # bit 0 or bit 1
+        door_active = bool(wbp_lin_data[4] & 0x03)
         raw_child_safety = bool((wbp_lin_data[4] & 0x80) >> 7)
-        if not door_active:  # only process child safety when door lock is idle
-            if raw_child_safety and not self._child_safety_prev:
-                self._child_safety_active = not self._child_safety_active
-            self._child_safety_prev = raw_child_safety
+        if not door_active:
+            self._child_safety_active = raw_child_safety
         Child_Safety = int(self._child_safety_active)
 
         commands.update({
