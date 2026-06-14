@@ -4,6 +4,10 @@
 #include "config.h"
 #include "motor_driver.h"
 MCP_CAN CAN(SPI_CS_PIN);
+#define PISTON_DURATION_MS 250
+
+unsigned long pistonPA_stop_time = 0;
+unsigned long pistonPB_stop_time = 0;
 
 void setup()
 {
@@ -30,9 +34,24 @@ void loop()
   unsigned long canId;
   uint8_t len;
   uint8_t buf[8];
+  if (pistonPA_stop_time > 0 && millis() >= pistonPA_stop_time) {
+      pistonPA_command(CMD_STOP);
+      pistonPA_stop_time = 0;
+  }
+  if (pistonPB_stop_time > 0 && millis() >= pistonPB_stop_time) {
+      pistonPB_command(CMD_STOP);
+      pistonPB_stop_time = 0;
+  }
   while (CAN.checkReceive() == CAN_MSGAVAIL)
   {
     CAN.readMsgBuf(&canId, &len, buf);
+    Serial.print("RAW: ");
+      for(int j=0; j<len; j++) {
+        if(buf[j] < 0x10) Serial.print("0");
+        Serial.print(buf[j], HEX);
+        Serial.print(" ");
+      }
+      Serial.println();
     if (canId == WINDOW_CMD_ID)
     {
       uint8_t w1 = (buf[0] >> 0) & 0x07;                   // bits 0-2
@@ -44,17 +63,27 @@ void loop()
 
       static uint8_t last_door_lock = 0; 
       // If door lock is 1, push pistons down (lock), if 0 push up (unlock)
+      Serial.print("w1="); Serial.print(w1);
+      Serial.print(" w2="); Serial.print(w2);
+      Serial.print(" dl="); Serial.print(door_lock);
+      Serial.print(" cs="); Serial.println(child_safety);
       if (door_lock != last_door_lock)
       {
       if (door_lock == 1)
         {
           pistonPA_command(CMD_UP);
+          pistonPA_stop_time = millis() + PISTON_DURATION_MS;
+          delay(100);
           pistonPB_command(CMD_UP);
+          pistonPB_stop_time = millis() + PISTON_DURATION_MS;
         }
         else
         {
           pistonPA_command(CMD_DOWN);
+          pistonPA_stop_time = millis() + PISTON_DURATION_MS;
+          delay(100);
           pistonPB_command(CMD_DOWN);
+          pistonPB_stop_time = millis() + PISTON_DURATION_MS;
         }
       last_door_lock = door_lock;
       }

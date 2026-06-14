@@ -9,7 +9,7 @@
 #define CMD_DOWN_AUTO 4
 
 // MCP2515 CAN (fixed SPI pins — do not touch)
-const int SPI_CS_PIN = 8;
+const int SPI_CS_PIN = 4;
 // 11=MOSI, 12=MISO, 13=SCK (hardwired)
 
 // Window Motor A — L298N #1 Motor A
@@ -28,12 +28,13 @@ const int INP2_PA = A2;
 const int ENA_PA = 9; // PWM
 
 // Piston B — L298N #2 Motor B
+const int INP1_PB = A3;
+const int INP2_PB = A4;
+const int ENB_PB = A5; // PWM
 
 static const uint8_t DEBOUNCE_THRESHOLD = 10U;
 static const uint16_t STARTUP_GRACE_MS = 1000U;
 static const uint8_t WBP_FRAME_ID = 0x12U;
 static const uint8_t WBP_DIAG_FRAME_ID = 0x3EU;
 static const uint16_t AUTO_DURATION_MS = 5000U;
-const int INP1_PB = A3;
-const int INP2_PB = A4;
-const int ENB_PB = 10; // PWM
+

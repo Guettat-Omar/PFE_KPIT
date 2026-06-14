@@ -134,7 +134,7 @@ void loop() {
         uint8_t door_unlock_bit = (door_stable_state == DOOR_UNLOCK) ? 1 : 0;
 
         // ── Child safety — digital read on A4 ───────────────
-        int child_adc = analogRead(BTN_CHILD_SAFETY);
+        int child_adc = (door_stable_state == DOOR_IDLE) ? analogRead(BTN_CHILD_SAFETY) : 1023;
         bool raw_child = (child_adc < CHILD_PRESSED_MAX);
         if (raw_child == child_pending) {
             child_debounce_count++;

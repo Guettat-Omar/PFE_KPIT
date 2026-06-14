@@ -25,13 +25,13 @@ void set_motor(int pin_en, int pin_in1, int pin_in2, uint8_t command)
     {
         digitalWrite(pin_in1, HIGH);
         digitalWrite(pin_in2, LOW);
-        analogWrite(pin_en, 255);
+        analogWrite(pin_en, 200);
     }
     else if (command == CMD_DOWN)
     {
         digitalWrite(pin_in1, LOW);
         digitalWrite(pin_in2, HIGH);
-        analogWrite(pin_en, 255);
+        analogWrite(pin_en, 200);
     }
     else
     { // CMD_STOP
@@ -127,7 +127,7 @@ void process_motor_command(int m_id, uint8_t command)
 
 void update_all_motors()
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         unsigned long now = millis();
         unsigned long delta = now - motors[i].last_position_update_time;
