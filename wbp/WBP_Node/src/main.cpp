@@ -158,13 +158,9 @@ void loop() {
         if (door_stable_state == DOOR_IDLE && !child_stable) {
             for (int i = 0; i < 4; i++) {
                 uint16_t adc_val;
-                if (i < 2) {
-                    analogRead(ADC_PINS[i]);
-                    analogRead(ADC_PINS[i]);
-                    adc_val = analogRead(ADC_PINS[i]);
-                } else {
-                    adc_val = 1023;
-                }
+                analogRead(ADC_PINS[i]);
+                analogRead(ADC_PINS[i]);
+                adc_val = analogRead(ADC_PINS[i]);
                 windowState new_state = window_switch(adc_val);
                 if (new_state == pending_state[i]) {
                     debounce_count[i]++;

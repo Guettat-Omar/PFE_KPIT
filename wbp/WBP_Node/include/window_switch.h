@@ -11,9 +11,9 @@ enum class windowState
     UNKNOWN
 };
 
-const uint16_t B_UP_AUTO   = 30;   // midpoint between 15 and 46
-const uint16_t B_UP        = 58;   // midpoint between 46 and 71
-const uint16_t B_DOWN_AUTO = 89;   // midpoint between 71 and 107
-const uint16_t B_DOWN      = 279;
+const uint16_t B_UP_AUTO   = 23;
+const uint16_t B_UP        = 52;
+const uint16_t B_DOWN_AUTO = 81;
+const uint16_t B_DOWN      = 273;
 
 windowState window_switch(uint16_t adc_value);
