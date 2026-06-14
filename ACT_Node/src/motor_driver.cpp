@@ -61,8 +61,8 @@ void motor_driver_init()
 
     motors[0] = {ENA_WA, IN1_WA, IN2_WA, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
     motors[1] = {ENB_WB, IN3_WB, IN4_WB, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
-    motors[2] = {ENA_PA, INP1_PA, INP2_PA, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
-    motors[3] = {ENB_PB, INP1_PB, INP2_PB, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION};
+    motors[2] = {ENA_PA, INP1_PA, INP2_PA, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION/2};
+    motors[3] = {ENB_PB, INP1_PB, INP2_PB, CMD_STOP, false, 0, CMD_STOP, 0, AUTO_DURATION/2};
 }
 
 void process_motor_command(int m_id, uint8_t command)
@@ -168,4 +168,16 @@ void stop_all_motors()
     motorWB_command(CMD_STOP);
     motorPA_command(CMD_STOP);
     motorPB_command(CMD_STOP);
+}
+void pistonPA_command(uint8_t command) {
+    // Pistons don't track position - just move in commanded direction
+    motors[2].current_cmd = command;
+    motors[2].is_auto = false;
+    set_motor(motors[2].pin_en, motors[2].pin_in1, motors[2].pin_in2, command);
+}
+
+void pistonPB_command(uint8_t command) {
+    motors[3].current_cmd = command;
+    motors[3].is_auto = false;
+    set_motor(motors[3].pin_en, motors[3].pin_in1, motors[3].pin_in2, command);
 }

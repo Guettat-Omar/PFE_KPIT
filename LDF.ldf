@@ -40,23 +40,23 @@ Signals {
 
 Frames {
     LSN_Input_Frame : 0x14, lsn, 5 {
-        Low_Beam_Btn,    22 ;   /* byte 2, bit 6 */
-        Left_Turn_Btn,   20 ;   /* byte 2, bit 4 */
-        Right_Turn_Btn,  19 ;   /* byte 2, bit 3 */
-        Hazard_Btn,      28 ;   /* byte 3, bit 4 */
+        Low_Beam_Btn,    38 ;   /* byte 4, bit 6 */
+        Left_Turn_Btn,   36 ;   /* byte 4, bit 4 */
+        Right_Turn_Btn,  37 ;   /* byte 4, bit 5 */
+        Hazard_Btn,       0 ;   /* byte 0, bit 0 */
         High_Beam_Btn,   31 ;   /* byte 3, bit 7 */
-        Parking_Btn,     21 ;   /* byte 2, bit 5 */
-        Front_Fog_Btn,   18 ;   /* byte 2, bit 2 */
-        Rear_Fog_Btn,    17 ;   /* byte 2, bit 1 */
-        Brake_Btn,       14 ;   /* byte 1, bit 6 */
-        Reverse_Btn,     29 ;   /* byte 3, bit 5 */
-        Flash_Btn,       30 ;   /* byte 3, bit 6 — normally 1, goes 0 when pulled */
-        PWF_Bit0,        36 ;   /* byte 4, bit 4 */
-        PWF_Bit1,        37 ;   /* byte 4, bit 5 */
-        Door_FL_Status,  25 ;   /* byte 3, bit 1 */
-        Door_FR_Status,  24 ;   /* byte 3, bit 0 */
-        Door_RL_Status,  38 ;   /* byte 4, bit 6 */
-        Door_RR_Status,  39 ;   /* byte 4, bit 7 */
+        Parking_Btn,     39 ;   /* byte 4, bit 7 */
+        Front_Fog_Btn,   35 ;   /* byte 4, bit 3 */
+        Rear_Fog_Btn,    34 ;   /* byte 4, bit 2 */
+        Brake_Btn,       30 ;   /* byte 3, bit 6 */
+        Reverse_Btn,     12 ;   /* byte 1, bit 4 */
+        Flash_Btn,       32 ;   /* byte 4, bit 0 — normally 1, goes 0 when pulled */
+        PWF_Bit0,        14 ;   /* byte 1, bit 6 */
+        PWF_Bit1,        13 ;   /* byte 1, bit 5 */
+        Door_FL_Status,  11 ;   /* byte 1, bit 3 */
+        Door_FR_Status,   9 ;   /* byte 1, bit 1 */
+        Door_RL_Status,  10 ;   /* byte 1, bit 2 */
+        Door_RR_Status,   8 ;   /* byte 1, bit 0 */
     }
     WBP_Frame : 0x12, wbp, 5 {
         Window1_State,  0 ;

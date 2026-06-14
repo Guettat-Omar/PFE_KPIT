@@ -10,18 +10,18 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 
 :root{
-  --bg:#0a0a0f;
-  --bg2:#0f0f1a;
-  --blue:#00d4ff;
-  --amber:#ff8c00;
-  --green:#00e676;
-  --red:#ff1744;
-  --cyan:#00d4ff;
-  --dim:#1a1a2e;
-  --text-dim:#3a3a5c;
-  --text-mid:#6a6a9a;
-  --text-bright:#b0b0d0;
-  --border:#1e2040;
+  --bg:#000000;          /* was #0a0a0f  → pure black like KPIT logo bg */
+  --bg2:#0d0d0d;         /* was #0f0f1a  → near-black for top/bottom bars */
+  --blue:#a8e600;        /* was #00d4ff  → KPIT lime green (replaces all cyan/blue accents) */
+  --amber:#ff8c00;       /* keep orange for warnings */
+  --green:#a8e600;       /* was #00e676  → use KPIT green for "on/active" states */
+  --red:#ff1744;         /* keep red for faults/errors */
+  --cyan:#a8e600;        /* was #00d4ff  → KPIT lime green */
+  --dim:#111111;         /* was #1a1a2e  → dark background for cells */
+  --text-dim:#555555;    /* was #3a3a5c  → dimmed text */
+  --text-mid:#aaaaaa;    /* was #6a6a9a  → medium text → lighter grey */
+  --text-bright:#ffffff; /* was #b0b0d0  → WHITE text on black background */
+  --border:#222222;      /* was #1e2040  → dark grey borders */
 }
 
 html,body{
@@ -65,7 +65,7 @@ body::after{
 /* ===== TAB BAR ===== */
 #tab-bar{
   height:40px;display:flex;align-items:stretch;
-  background:#080810;border-bottom:2px solid var(--border);
+  background:#080808;border-bottom:2px solid var(--border);
   position:relative;z-index:10;
 }
 .tab-btn{
@@ -73,7 +73,7 @@ body::after{
   font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
   letter-spacing:2.5px;text-transform:uppercase;
   border:none;cursor:pointer;border-right:1px solid var(--border);
-  background:#080810;color:var(--text-dim);
+  background:#080808;color:var(--text-dim);
   transition:color 0.2s,background 0.2s;
   min-height:40px;border-radius:0;
   -webkit-appearance:none;appearance:none;
@@ -81,7 +81,7 @@ body::after{
 }
 .tab-btn:last-child{border-right:none;}
 .tab-btn.active{
-  background:#0a0f1a;color:var(--blue);
+  background:#0a0f00;color:var(--blue);
   border-bottom:2px solid var(--blue);
   box-shadow:0 2px 12px rgba(0,212,255,0.2);
   margin-bottom:-2px;
@@ -109,7 +109,7 @@ body::after{
 
 .col{padding:16px 12px;border-right:1px solid var(--border);}
 .col:last-child{border-right:none;border-left:1px solid var(--border);}
-.col-title{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.col-title{font-size:13px;font-weight:700;letter-spacing:3px;color:#ffffff;margin-bottom:12px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--border);}
 
 /* ===== LIGHT PILLS ===== */
 .light-pills{display:flex;flex-direction:column;gap:4px;}
@@ -135,7 +135,7 @@ body::after{
 .hazard-btn svg{width:36px;height:36px;fill:var(--text-dim);transition:fill 0.3s;}
 .hazard-btn.on svg{fill:#ff1744;}
 .section-divider{height:1px;background:var(--border);margin:8px 0 12px;}
-.sub-title{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--text-dim);margin-bottom:10px;}
+.sub-title{font-size:13px;font-weight:700;letter-spacing:2px;color:#ffffff;margin-bottom:10px;}
 .window-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .win-cell{border:1px solid var(--border);border-radius:4px;background:#0d0d1a;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:60px;transition:all 0.3s ease;}
 .win-cell.moving{border-color:var(--cyan);box-shadow:0 0 6px rgba(0,212,255,0.2);}
@@ -903,10 +903,10 @@ function updateDashboard(state){
       }
     }
     var doorOpenMap={
-      'door-fl': !!(doors.fl),
-      'door-fr': !!(doors.fr),
-      'door-rl': !!(doors.rl),
-      'door-rr': !!(doors.rr)
+      'door-fl': !!(doors.fl_open),
+      'door-fr': !!(doors.fr_open),
+      'door-rl': !!(doors.rl_open),
+      'door-rr': !!(doors.rr_open)
     };
     var doorIds=['door-fl','door-fr','door-rl','door-rr'];
     doorIds.forEach(function(id){

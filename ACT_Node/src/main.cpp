@@ -42,20 +42,20 @@ void loop()
       uint8_t child_safety = (buf[1] >> 4) & 0x01;
       uint8_t door_lock = (buf[1] >> 5) & 0x01;
 
-      static uint8_t last_door_lock = 0xFF; 
+      static uint8_t last_door_lock = 0; 
       // If door lock is 1, push pistons down (lock), if 0 push up (unlock)
       if (door_lock != last_door_lock)
       {
       if (door_lock == 1)
         {
-          motorPA_command(CMD_DOWN);
-          motorPB_command(CMD_DOWN);
+          pistonPA_command(CMD_UP);
+          pistonPB_command(CMD_UP);
         }
         else
         {
-          motorPA_command(CMD_UP);
-          motorPB_command(CMD_UP);
-      }
+          pistonPA_command(CMD_DOWN);
+          pistonPB_command(CMD_DOWN);
+        }
       last_door_lock = door_lock;
       }
 

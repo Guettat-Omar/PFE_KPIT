@@ -21,8 +21,9 @@ class BcmGateway:
         self.seq_counter = 0
 
         # Door lock toggle state (momentary button → latched lock)
-        self._door_lock_prev = False
         self._door_locked = False
+        self._child_safety_prev = False
+        self._child_safety_active = False
 
         # 2. Load the DBC Database
         try:
@@ -51,16 +52,24 @@ class BcmGateway:
             window_state = wbp_lin_data[i] & 0x07
             commands.update({f"Window_{i+1}": state_to_cmd.get(window_state,0)})
 
-        raw_door_lock = bool(wbp_lin_data[4] & 0x01)
-        if raw_door_lock and not self._door_lock_prev:  # Rising edge: button just pressed
-            if any_door_open and not self._door_locked:
-                # Door safety: block lock command while any door is open
-                logger.warning("[DOOR SAFETY] Lock command blocked — door(s) open")
-            else:
-                self._door_locked = not self._door_locked
-        self._door_lock_prev = raw_door_lock
+        raw_door_lock   = bool(wbp_lin_data[4] & 0x01)  # LOCK position
+        raw_door_unlock = bool(wbp_lin_data[4] & 0x02)  # UNLOCK position
 
-        Child_Safety = (wbp_lin_data[4] & 0x02) >> 1
+        if raw_door_lock:
+            if any_door_open:
+                logger.warning("[DOOR SAFETY] Lock blocked  door(s) open")
+            else:
+                self._door_locked = True
+        elif raw_door_unlock:
+            self._door_locked = False
+
+        door_active = bool(wbp_lin_data[4] & 0x03)  # bit 0 or bit 1
+        raw_child_safety = bool((wbp_lin_data[4] & 0x80) >> 7)
+        if not door_active:  # only process child safety when door lock is idle
+            if raw_child_safety and not self._child_safety_prev:
+                self._child_safety_active = not self._child_safety_active
+            self._child_safety_prev = raw_child_safety
+        Child_Safety = int(self._child_safety_active)
 
         commands.update({
             "Door_Lock": int(self._door_locked),
@@ -150,13 +159,16 @@ class BcmGateway:
 
         # Step 4: Combine into the exact DBC mappings based on the new LED hardware table!
         combined_signals = {
-            "Led_B0_0": 0,"Led_B0_1": 0, "Led_B0_3": 0, "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
-            "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0, "Led_B1_4": 0, "Led_B1_7": 0,
-            "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_2": 0, "Led_B2_3": 0, "Led_B2_4": 0,
-            "Led_B2_5": 0, "Led_B2_6": 0, "Led_B2_7": 0,
+            "Led_B0_0": 0, "Led_B0_1": 0, "Led_B0_3": 0, "Led_B0_4": 0,
+            "Led_B0_5": 0, "Led_B0_6": 0, "Led_B0_7": 0,
+            "Led_B1_0": 0, "Led_B1_1": 0, "Led_B1_2": 0, "Led_B1_3": 0,
+            "Led_B1_4": 0, "Led_B1_5": 0, "Led_B1_6": 0, "Led_B1_7": 0,
+            "Led_B2_0": 0, "Led_B2_1": 0, "Led_B2_2": 0, "Led_B2_3": 0,
+            "Led_B2_4": 0, "Led_B2_5": 0, "Led_B2_6": 0, "Led_B2_7": 0,
             "Led_B3_0": 0, "Led_B3_1": 0, "Led_B3_2": 0, "Led_B3_3": 0,
             "Led_B3_4": 0, "Led_B3_5": 0, "Led_B3_6": 0, "Led_B3_7": 0,
-            "Led_B4_0": 0, "Led_B4_4": 0, "Led_B4_5": 0, "Led_B4_6": 0, "Led_B4_7": 0,
+            "Led_B4_0": 0, "Led_B4_1": 0, "Led_B4_2": 0, "Led_B4_3": 0,
+            "Led_B4_4": 0, "Led_B4_5": 0, "Led_B4_6": 0, "Led_B4_7": 0,
             "Seq_Counter": self.seq_counter,
             "CRC_Checksum": 0
         }
@@ -216,6 +228,11 @@ class BcmGateway:
         if turn_signals.get("DrlLed", 0) == 1:
             for led in LIGHT_LEDS["drl"]:
                 combined_signals[led] = 1
+
+        # PWF state LEDs: exactly one of parken/wohnen/fahren lit at a time
+        for state_val, led_key in [(0, "pwf_parken"), (1, "pwf_wohnen"), (2, "pwf_fahren")]:
+            for led in LIGHT_LEDS[led_key]:
+                combined_signals[led] = 1 if pwf_state == state_val else 0
 
         # Step 5: Ask Cantools to encode the dictionary into raw CAN bytes
         try:
